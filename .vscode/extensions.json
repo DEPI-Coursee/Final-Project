@@ -1,0 +1,12 @@
+{
+  "recommendations": [
+    "dart-code.dart-code",
+    "dart-code.flutter",
+    "alexisvt.flutter-snippets",
+    "nash.awesome-flutter-snippets",
+    "gmlewis-vscode.flutter-stylizer",
+    "jeroen-meijer.pubspec-assist",
+    "cirrus-ci.flutter-cirrus",
+    "pflannery.vscode-versionlens"
+  ]
+}
