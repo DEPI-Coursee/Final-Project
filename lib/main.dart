@@ -11,7 +11,7 @@ class TravelApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Travel Guide',
+      title: 'Visit List Page',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.amber,
