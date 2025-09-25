@@ -80,3 +80,4 @@ This project is part of a course assignment.
 ---
 
 *Developed with ❤️ using Flutter*
+
