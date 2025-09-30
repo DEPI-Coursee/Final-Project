@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tour_guide/screens/home_screen.dart';
 import 'package:tour_guide/screens/splash_screen.dart';
 
 void main() {
@@ -16,7 +17,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: SplashScreen(), // Directly start from your landing page
+      home: HomeScreen(), // Directly start from your landing page
     );
   }
 }
