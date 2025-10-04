@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'dart:async';
+import 'getStrated_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -9,6 +11,19 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Timer(const Duration(seconds: 4), () {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const GetStartedScreen(),
+        ),
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
           Size size = MediaQuery.of(context).size;
@@ -28,11 +43,7 @@ class _SplashScreenState extends State<SplashScreen> {
       child: Image.asset(
         "assets/logo.png",
         width: size.width / 2,
-      )
-          .animate()
-          .fadeIn(duration: const Duration(milliseconds: 800))
-          .then(delay: const Duration(seconds: 2))
-          .fadeOut(duration: const Duration(milliseconds: 800)),
+      ),
     ),
   ),
 );
