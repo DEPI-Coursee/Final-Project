@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:tour_guide/screens/place_details_screen.dart';
+
 
 class HomeScreen extends StatelessWidget {
   HomeScreen({super.key});
@@ -74,7 +76,9 @@ class HomeScreen extends StatelessWidget {
                 itemCount: count,
                 itemBuilder: (ctx, index) => InkWell(
                   onTap: () {
-                    // TODO: aro7 le one place page
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (context) => PlaceDetails()),
+                    );
                   },
                   child: Row(
                     children: [
