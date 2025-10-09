@@ -65,7 +65,9 @@
                     Padding(
                       padding: const EdgeInsets.only(bottom: 50.0),
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Get.off(HomeScreen());
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.black87,
                           foregroundColor: Colors.white,
