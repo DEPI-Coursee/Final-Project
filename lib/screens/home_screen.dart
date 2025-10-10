@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:tour_guide/screens/place_details_screen.dart';
 
+import 'favorits_screen.dart';
+
 class HomeScreen extends StatelessWidget {
   HomeScreen({super.key});
 
@@ -25,15 +27,41 @@ class HomeScreen extends StatelessWidget {
             color: Color(0xFFA8845F),
           ),
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: IconButton(
-              onPressed: () {},
-              icon: Icon(Icons.menu, color: Color(0xFFB58E66)),
+        // actions: [
+        //   Padding(
+        //     padding: const EdgeInsets.all(8.0),
+        //     child: IconButton(
+        //       onPressed: () {},
+        //       icon: Icon(Icons.menu, color: Color(0xFFB58E66)),
+        //     ),
+        //   ),
+        // ],
+      ),
+      endDrawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Color(0xFFB58E66)),
+              child: Text(
+                'Menu',
+                style: TextStyle(color: Colors.white, fontSize: 24),
+              ),
             ),
-          ),
-        ],
+            ListTile(
+              leading: const Icon(Icons.favorite),
+              title: const Text('Favorites'),
+              onTap: () {
+                Get.to(FavoritesScreen());
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: const Text('Settings'),
+              onTap: () {},
+            ),
+          ],
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(8.0),
