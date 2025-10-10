@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:tour_guide/screens/place_details_screen.dart';
-
 
 class HomeScreen extends StatelessWidget {
   HomeScreen({super.key});
@@ -107,11 +107,14 @@ class HomeScreen extends StatelessWidget {
                             Text(
                               'Pyramids', //test data
                               style: TextStyle(
-                                color: Color(0xFF916E53), ///nkhly da ellon el asasy le kol el titles?
+                                color: Color(0xFF916E53),
+
+                                ///nkhly da ellon el asasy le kol el titles?
                                 fontSize: 18,
                               ),
                             ),
-                            Text( //test data
+                            Text(
+                              //test data
                               'The pyramids of Giza and the Great Sphinx are among the most popular tourist destinations in the world, and indeed already were even in Roman times.',
                             ),
                           ],
@@ -128,15 +131,6 @@ class HomeScreen extends StatelessWidget {
     );
   }
 }
-
-
-
-
-
-
-
-
-
 
 // import 'package:flutter/cupertino.dart';
 // import 'package:flutter/material.dart';

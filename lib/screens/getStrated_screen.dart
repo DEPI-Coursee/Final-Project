@@ -1,17 +1,20 @@
-  import 'package:flutter/material.dart';
-  import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:get/get.dart';
 
-  class GetStartedScreen extends StatefulWidget {
-    const GetStartedScreen({super.key});
+import 'home_screen.dart';
 
-    @override
-    State <GetStartedScreen> createState() => _GetStartedScreenState();
-  }
+class GetStartedScreen extends StatefulWidget {
+  const GetStartedScreen({super.key});
 
-  class _GetStartedScreenState extends State<GetStartedScreen> {
-    @override
-    Widget build(BuildContext context) {
-      return Scaffold(
+  @override
+  State<GetStartedScreen> createState() => _GetStartedScreenState();
+}
+
+class _GetStartedScreenState extends State<GetStartedScreen> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
@@ -22,10 +25,9 @@
         child: SafeArea(
           child: Column(
             children: [
-              
               // Spacer to push content down
               Expanded(child: SizedBox()),
-              
+
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: Column(
@@ -104,7 +106,6 @@
           ),
         ),
       ),
-      );
-              
-    } 
+    );
   }
+}
