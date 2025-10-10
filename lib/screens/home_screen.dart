@@ -76,7 +76,7 @@ class HomeScreen extends StatelessWidget {
                 itemCount: count,
                 itemBuilder: (ctx, index) => InkWell(
                   onTap: () {
-                    Get.off(PlaceDetails());
+                    Get.to(PlaceDetails());
                   },
                   child: Row(
                     children: [
