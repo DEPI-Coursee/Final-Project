@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:tour_guide/screens/getStrated_screen.dart';
 import 'package:tour_guide/screens/home_screen.dart';
 import 'package:tour_guide/screens/splash_screen.dart';
@@ -12,12 +13,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Tour Guide App',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
+      theme: ThemeData(primarySwatch: Colors.blue),
       home: SplashScreen(), // Directly start from your landing page
     );
   }
