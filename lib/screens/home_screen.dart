@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:tour_guide/screens/place_details_screen.dart';
 
 import 'favorits_screen.dart';
+import 'visit_list_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   HomeScreen({super.key});
@@ -53,6 +54,13 @@ class HomeScreen extends StatelessWidget {
               title: const Text('Favorites'),
               onTap: () {
                 Get.to(FavoritesScreen());
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.list_alt),
+              title: const Text('Visit List'),
+              onTap: () {
+                Get.to(VisitListScreen());
               },
             ),
             ListTile(
