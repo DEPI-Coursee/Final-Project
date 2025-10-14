@@ -16,16 +16,13 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         titleSpacing: 10,
         title: Text(
           'Tourio',
-          style: TextStyle(
+          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
             fontFamily: 'Arial',
             fontWeight: FontWeight.bold,
             fontSize: 28,
-            color: Color(0xFFA8845F),
           ),
         ),
         // actions: [
@@ -42,11 +39,14 @@ class HomeScreen extends StatelessWidget {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Color(0xFFB58E66)),
+            DrawerHeader(
+              decoration: BoxDecoration(color: Theme.of(context).primaryColor),
               child: Text(
                 'Menu',
-                style: TextStyle(color: Colors.white, fontSize: 24),
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  color: Colors.white,
+                  fontSize: 24,
+                ),
               ),
             ),
             ListTile(
@@ -81,9 +81,8 @@ class HomeScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Let’s find the perfect place for you',
-                    style: TextStyle(
-                      color: Color(0xFFC6986F),
+                    'Let\'s find the perfect place for you',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontSize: 20,
                       fontFamily: 'Caveat',
                     ),
@@ -93,14 +92,11 @@ class HomeScreen extends StatelessWidget {
                     controller: searchController,
                     decoration: InputDecoration(
                       hintText: 'Search a place',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
                       suffixIcon: IconButton(
                         onPressed: () {
                           // TODO: search action
                         },
-                        icon: Icon(Icons.search, color: Color(0xFFC6986F)),
+                        icon: Icon(Icons.search, color: Theme.of(context).primaryColor),
                       ),
                     ),
                   ),
@@ -124,13 +120,13 @@ class HomeScreen extends StatelessWidget {
                           decoration: BoxDecoration(
                             image: DecorationImage(
                               image: NetworkImage(
-                                'https://upload.wikimedia.org/wikipedia/commons/e/e3/Kheops-Pyramid.jpg',
+                                'https://cdn-imgix.headout.com/media/images/c4a520a45f9aea6fbcaab0eee5089a5a-Louvre%20Paris%20Pyramids.jpg?auto=format&w=1069.6000000000001&h=687.6&q=90&ar=14%3A9&crop=faces&fit=crop',
                               ),
                               fit: BoxFit.cover,
                             ),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: Color(0xFFC6986F),
+                              color: Theme.of(context).primaryColor,
                               width: 3,
                             ),
                           ),
@@ -140,18 +136,17 @@ class HomeScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            SizedBox(height: 12,),
                             Text(
-                              'Pyramids', //test data
-                              style: TextStyle(
-                                color: Color(0xFF916E53),
-
-                                ///nkhly da ellon el asasy le kol el titles?
+                              'louvre museum', //test data
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                 fontSize: 18,
                               ),
                             ),
                             Text(
                               //test data
-                              'The pyramids of Giza and the Great Sphinx are among the most popular tourist destinations in the world, and indeed already were even in Roman times.',
+                              'The pyramids of Giza and the Great Sphinx are among the most popular tourist destinations in the world.',
+                              style: Theme.of(context).textTheme.bodyMedium,
                             ),
                           ],
                         ),

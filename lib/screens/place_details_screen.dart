@@ -7,28 +7,26 @@ class PlaceDetails extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 2,
         titleSpacing: 10,
         title: Text(
           'Place Details',
-          style: TextStyle(
+          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
             fontFamily: 'Arial',
             fontWeight: FontWeight.bold,
             fontSize: 28,
-            color: Color(0xFFA8845F),
           ),
         ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Card(
+          color: Theme.of(context).cardColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: const Color(0xffc39871), width: 3),
+            side: BorderSide(color: Theme.of(context).primaryColor, width: 2),
           ),
-          color: Colors.white,
-          elevation: 2,
+          elevation: 4,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -39,13 +37,12 @@ class PlaceDetails extends StatelessWidget {
                   topRight: Radius.circular(16),
                 ),
                 child: Image.network(
-                  'https://upload.wikimedia.org/wikipedia/commons/e/e3/Kheops-Pyramid.jpg',
+                  'https://cdn-imgix.headout.com/media/images/c4a520a45f9aea6fbcaab0eee5089a5a-Louvre%20Paris%20Pyramids.jpg?auto=format&w=1069.6000000000001&h=687.6&q=90&ar=14%3A9&crop=faces&fit=crop',
                   height: 200,
                   width: double.infinity,
                   fit: BoxFit.cover,
                 ),
               ),
-
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -53,21 +50,19 @@ class PlaceDetails extends StatelessWidget {
                   children: [
                     // Title
                     Text(
-                      'The Great Pyramid',
-                      style: TextStyle(
+                      'louvre museum',
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
-                        color: Colors.brown.shade700,
                       ),
                     ),
                     const SizedBox(height: 8),
 
                     // Description
                     Text(
-                      'With its 146.59m in height, Kheops’ pyramid, has indeed deserved its modern-day nickname of The Great Pyramid. Khefren’s adjacent pyramid appears to be somewhat higher, but this is only because it was built on a higher part of the Giza platform. It is, in fact, slightly over 3m “smaller”.',
-                      style: TextStyle(
+                      'With its 146.59m in height, Kheops\' pyramid, has indeed deserved its modern-day nickname of The Great Pyramid. Khefren\'s adjacent pyramid appears to be somewhat higher, but this is only because it was built on a higher part of the Giza platform. It is, in fact, slightly over 3m "smaller".',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         fontSize: 16,
-                        color: Colors.grey.shade800,
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -83,8 +78,6 @@ class PlaceDetails extends StatelessWidget {
                         icon: const Icon(Icons.favorite_border),
                         label: const Text("Add to Favorite"),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xffc39871),
-                          foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -106,8 +99,6 @@ class PlaceDetails extends StatelessWidget {
                         icon: const Icon(Icons.list_alt),
                         label: const Text("Add to Visit List"),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xffc39871),
-                          foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),

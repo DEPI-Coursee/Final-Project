@@ -18,7 +18,7 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: AssetImage("assets/background_getStarted.png"),
+            image: AssetImage("assets/bg_getStarted2.jpg"),
             fit: BoxFit.cover,
           ),
         ),
@@ -37,12 +37,24 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
                     RichText(
                       textAlign: TextAlign.center,
                       text: TextSpan(
-                        text: "Simple way to\ntravel the world",
+                        text: "Simple way to\nsee the world",
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 36,
                           fontWeight: FontWeight.bold,
                           height: 1.2,
+                          shadows: [
+                            Shadow(
+                              offset: Offset(2, 2),
+                              blurRadius: 4,
+                              color: Colors.blue.withOpacity(0.8),
+                            ),
+                            Shadow(
+                              offset: Offset(-1, -1),
+                              blurRadius: 2,
+                              color: Colors.blue.withOpacity(0.6),
+                            ),
+                          ],
                         ),
                       ),
                     ).animate().fadeIn(duration: 800.ms),
@@ -58,6 +70,13 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
                         fontSize: 16,
                         fontWeight: FontWeight.normal,
                         height: 1.4,
+                        shadows: [
+                          Shadow(
+                            offset: Offset(1, 1),
+                            blurRadius: 3,
+                            color: Colors.blue.withOpacity(0.7),
+                          ),
+                        ],
                       ),
                     ),
 
@@ -71,8 +90,6 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
                           Get.off(HomeScreen());
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black87,
-                          foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 40,
                             vertical: 16,

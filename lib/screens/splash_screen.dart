@@ -26,27 +26,38 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-          Size size = MediaQuery.of(context).size;
-   return Scaffold(
-  body: Container(
-    decoration: const BoxDecoration(
-      gradient: LinearGradient(
-        colors: [
-          Color(0xFFEC9E60), // Bright gold
-          Color(0xFFF5F1E6), // Darker goldenrod
-        ],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
+    Size size = MediaQuery.of(context).size;
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Theme.of(context).primaryColor,
+              Theme.of(context).scaffoldBackgroundColor,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(width: double.infinity,),
+            Image.asset(
+                "assets/logo5.png",
+                width: size.width *0.85,
+              ),
+            Text("Tourio",
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              fontFamily: 'Caveat',
+              fontSize: 40,
+              color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.8),
+            ),)
+          ],
+        ),
       ),
-    ),
-    child: Center(
-      child: Image.asset(
-        "assets/logo.png",
-        width: size.width / 2,
-      ),
-    ),
-  ),
-);
+    );
 
     
   } 

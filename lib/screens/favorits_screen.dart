@@ -19,28 +19,88 @@ class FavoritesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Favorites",
-          style: TextStyle(color: Color(0xFF4A3A2A)),
-        ),
-        centerTitle: true,
+        // title: const Text("Favorites"),
+        // centerTitle: true,
       ),
-      body: Scrollbar(
-        child: SingleChildScrollView(
-          child: GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(8.0),
-            itemCount: cardData.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 10.0,
-              mainAxisSpacing: 10.0,
-              childAspectRatio: 0.9,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Theme.of(context).scaffoldBackgroundColor,
+              Theme.of(context).scaffoldBackgroundColor.withOpacity(0.8),
+            ],
+          ),
+        ),
+        child: Scrollbar(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header section outside container
+                Row(
+                  children: [
+                    Icon(
+                      Icons.favorite,
+                      color: Theme.of(context).primaryColor,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Your Favorite Places',
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Discover and manage your saved destinations',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontFamily: 'Caveat',
+                    color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.8),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                
+                // Cards container
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Theme.of(context).primaryColor.withOpacity(0.3),
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: cardData.length,
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12.0,
+                      mainAxisSpacing: 12.0,
+                      childAspectRatio: 0.9,
+                    ),
+                    itemBuilder: (context, index) {
+                      return DestinationCard(title: cardData[index]);
+                    },
+                  ),
+                ),
+              ],
             ),
-            itemBuilder: (context, index) {
-              return DestinationCard(title: cardData[index]);
-            },
           ),
         ),
       ),
@@ -56,6 +116,7 @@ class DestinationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      color: Theme.of(context).cardColor,
       clipBehavior: Clip.antiAlias,
       elevation: 4.0,
       shape: RoundedRectangleBorder(
@@ -68,7 +129,7 @@ class DestinationCard extends StatelessWidget {
           Expanded(
             flex: 45,
             child: Image.network(
-              "https://gratisography.com/wp-content/uploads/2024/11/gratisography-augmented-reality-800x525.jpg",
+              "https://cdn-imgix.headout.com/media/images/c4a520a45f9aea6fbcaab0eee5089a5a-Louvre%20Paris%20Pyramids.jpg?auto=format&w=1069.6000000000001&h=687.6&q=90&ar=14%3A9&crop=faces&fit=crop",
               fit: BoxFit.cover,
               width: double.infinity,
               errorBuilder: (context, error, stackTrace) {
@@ -100,42 +161,44 @@ class DestinationCard extends StatelessWidget {
                         children: [
                           Text(
                             title,
-                            style: const TextStyle(
+                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF4A3A2A),
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 2),
-                          const Row(
+                          Row(
                             children: [
                               Icon(Icons.location_on, size: 8, color: Colors.grey),
                               SizedBox(width: 2),
                               Text(
                                 'Cairo, Egypt',
-                                style: TextStyle(fontSize: 8, color: Colors.grey),
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  fontSize: 8,
+                                ),
                               ),
                             ],
                           ),
                         ],
                       ),
-                      const Text(
+                      Text(
                         '\$225',
-                        style: TextStyle(
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF4A3A2A),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 1),
-                  const Flexible(
+                  Flexible(
                     child: Text(
                       'The magnificent ancient pyramids and Great Sphinx...',
-                      style: TextStyle(fontSize: 8, color: Colors.black87),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontSize: 8,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -144,14 +207,18 @@ class DestinationCard extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Column(
+                      Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('Planned for:',
-                              style: TextStyle(fontSize: 7, color: Colors.grey)),
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                fontSize: 7,
+                              )),
                           Text('15/10/2025',
-                              style:
-                              TextStyle(fontSize: 8, fontWeight: FontWeight.bold)),
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold,
+                              )),
                         ],
                       ),
                       Row(
@@ -159,8 +226,6 @@ class DestinationCard extends StatelessWidget {
                           ElevatedButton(
                             onPressed: () {},
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Color(0xFF8B7B6B),
-                              foregroundColor: Colors.black,
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 6, vertical: 3),
                               shape: RoundedRectangleBorder(
@@ -168,9 +233,9 @@ class DestinationCard extends StatelessWidget {
                               elevation: 2,
                               minimumSize: Size.zero,
                             ),
-                            child: const Text(
+                            child: Text(
                               'Details',
-                              style: TextStyle(
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 8,
                                   color: Colors.white),
@@ -184,7 +249,7 @@ class DestinationCard extends StatelessWidget {
                               icon: const Icon(Icons.favorite),
                               iconSize: 12,
                               padding: EdgeInsets.zero,
-                              color: Color(0xFF4A3A2A),
+                              color: Theme.of(context).primaryColor,
                             ),
                           ),
                         ],
