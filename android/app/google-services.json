@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "758189748301",
+    "project_id": "tour-a3380",
+    "storage_bucket": "tour-a3380.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:758189748301:android:1c4739870b65a26b186c04",
+        "android_client_info": {
+          "package_name": "com.example.tour_guide"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBv_wHAb5fcZlki8a0DGJwYU8EvX92phoQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

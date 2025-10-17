@@ -37,6 +37,7 @@ dependencies:
   get: ^4.7.2
   dartx: ^1.2.0
   flutter_animate: ^4.5.2
+  firebase_auth: ^6.1.1
 
 dev_dependencies:
   flutter_test:

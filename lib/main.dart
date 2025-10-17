@@ -80,7 +80,7 @@ class MyApp extends StatelessWidget {
           iconColor: Colors.white70,
         ),
       ),
-      home: SplashScreen(),
+      home: LoginScreen(),
     );
   }
 }
