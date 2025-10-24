@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:tour_guide/screens/login_screen.dart';
+import 'package:tour_guide/services/AuthService.dart';
 
 class PlaceDetails extends StatelessWidget {
-  const PlaceDetails({super.key});
+  PlaceDetails({super.key});
+
+  final authservice = Authservice();
 
   @override
   Widget build(BuildContext context) {
@@ -71,9 +76,10 @@ class PlaceDetails extends StatelessWidget {
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Added to Favorites")),
-                          );
+                          // ScaffoldMessenger.of(context).showSnackBar(
+                          //   const SnackBar(content: Text("Added to Favorites")),
+                          // );
+                         authservice.isLoggedIn()? Get.snackbar('added', 'static mess'): Get.to(LoginScreen()) ;
                         },
                         icon: const Icon(Icons.favorite_border),
                         label: const Text("Add to Favorite"),
@@ -90,11 +96,12 @@ class PlaceDetails extends StatelessWidget {
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("Added to Visit List"),
-                            ),
-                          );
+                          // ScaffoldMessenger.of(context).showSnackBar(
+                          //   const SnackBar(
+                          //     content: Text("Added to Visit List"),
+                          //   ),
+                          // );
+                          authservice.isLoggedIn()? Get.snackbar('added', 'static mess'): Get.to(LoginScreen()) ;
                         },
                         icon: const Icon(Icons.list_alt),
                         label: const Text("Add to Visit List"),

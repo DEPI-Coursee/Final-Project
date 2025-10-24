@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:tour_guide/controllers/auth_controller.dart';
-import 'package:tour_guide/services/AuthService.dart';
+import 'login_screen.dart';
 
-class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key});
+class RegisterScreen extends StatelessWidget {
+  const RegisterScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +19,7 @@ class LoginScreen extends StatelessWidget {
             colors: [
               Theme.of(context).scaffoldBackgroundColor,
               Theme.of(context).primaryColor,
-              const Color(0xFF3B82F6), // Blue
+              const Color(0xFF3B82F6),
             ],
             stops: const [0.0, 0.5, 1.0],
           ),
@@ -27,7 +27,6 @@ class LoginScreen extends StatelessWidget {
         child: SafeArea(
           child: Stack(
             children: [
-              // Decorative shapes
               Positioned(
                 top: -50,
                 right: -50,
@@ -45,7 +44,6 @@ class LoginScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              // Main content
               Center(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(24.0),
@@ -53,9 +51,8 @@ class LoginScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const SizedBox(height: 30),
-                      
                       Text(
-                        'Welcome to Tourio',
+                        'Create Your Account',
                         style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           fontFamily: 'Caveat',
                           fontSize: 32,
@@ -64,14 +61,14 @@ class LoginScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Sign in to discover amazing places',
+                        'Join us and start exploring!',
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           fontSize: 16,
                         ),
                       ),
                       const SizedBox(height: 40),
-                      
-                      // Login form card
+
+                      // Registration Form
                       Container(
                         padding: const EdgeInsets.all(32),
                         decoration: BoxDecoration(
@@ -91,17 +88,27 @@ class LoginScreen extends StatelessWidget {
                         ),
                         child: Column(
                           children: [
+                            // Name field
+                            TextField(
+                              controller: controller.nameController,
+                              decoration: const InputDecoration(
+                                labelText: 'Full Name',
+                                prefixIcon: Icon(Icons.person_outline),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+
                             // Email field
                             TextField(
                               controller: controller.emailController,
                               keyboardType: TextInputType.emailAddress,
-                              decoration: InputDecoration(
+                              decoration: const InputDecoration(
                                 labelText: 'Email',
-                                prefixIcon: const Icon(Icons.email_outlined),
+                                prefixIcon: Icon(Icons.email_outlined),
                               ),
                             ),
                             const SizedBox(height: 20),
-                            
+
                             // Password field
                             Obx(() => TextField(
                               controller: controller.passwordController,
@@ -120,49 +127,46 @@ class LoginScreen extends StatelessWidget {
                               ),
                             )),
                             const SizedBox(height: 30),
-                            
-                            // Sign in button
+
+                            // Register Button
                             Obx(() => SizedBox(
                               width: double.infinity,
                               child: ElevatedButton(
-                                onPressed: controller.isSubmitting.value ? null : controller.submit,
+                                onPressed: controller.isSubmitting.value ? null : controller.register,
                                 style: ElevatedButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(vertical: 16),
                                 ),
                                 child: controller.isSubmitting.value
                                     ? const SizedBox(
-                                        height: 24,
-                                        width: 24,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
-                                      )
+                                  height: 24,
+                                  width: 24,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
                                     : const Text(
-                                        'Sign In',
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
+                                  'Sign Up',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                             )),
                           ],
                         ),
                       ),
-                      
                       const SizedBox(height: 30),
-                      
-                      // Sign up link
+
+                      // Back to Login
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            "Don't have an account? ",
+                            "Already have an account? ",
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
                           TextButton(
-                            onPressed: () {}, // TODO: Navigate to sign up
-                            child: const Text('Sign up'),
+                            onPressed: () => Get.off(() => const LoginScreen()),
+                            child: const Text('Login'),
                           ),
                         ],
                       ),
@@ -177,4 +181,3 @@ class LoginScreen extends StatelessWidget {
     );
   }
 }
-
