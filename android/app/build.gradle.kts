@@ -24,7 +24,7 @@ android {
 //            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86_64")
 //        }
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.tour_guide"
+        application Id = "com.example.tour_guide"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 23
