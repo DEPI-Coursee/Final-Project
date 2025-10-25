@@ -4,8 +4,30 @@ import 'package:tour_guide/screens/getStrated_screen.dart';
 import 'package:tour_guide/screens/home_screen.dart';
 import 'package:tour_guide/screens/splash_screen.dart';
 import 'package:tour_guide/screens/login_screen.dart';
+import 'package:tour_guide/firebaseoptions.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-void main() {
+void main() async {
+  // <--- 3. Make main async
+
+  // 4. Ensure Flutter widgets are initialized
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 5. Initialize Firebase Core
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    print("Firebase initialized successfully.");
+  } catch (e) {
+    // Handle initialization error gracefully
+    print("Error initializing Firebase: $e");
+  }
+
+  // 6. Inject essential controllers *after* initialization
+  // Get.put(AuthController()); // Ensure your AuthController is put here
+  // Get.put(AuthService()); // If you want to put the service directly
+
   runApp(const MyApp());
 }
 
@@ -68,19 +90,15 @@ class MyApp extends StatelessWidget {
           ),
         ),
         textButtonTheme: TextButtonThemeData(
-          style: TextButton.styleFrom(
-            foregroundColor: const Color(0xFF84AAF6),
-          ),
+          style: TextButton.styleFrom(foregroundColor: const Color(0xFF84AAF6)),
         ),
-        drawerTheme: const DrawerThemeData(
-          backgroundColor: Color(0xFF1E293B),
-        ),
+        drawerTheme: const DrawerThemeData(backgroundColor: Color(0xFF1E293B)),
         listTileTheme: const ListTileThemeData(
           textColor: Colors.white,
           iconColor: Colors.white70,
         ),
       ),
-      home: HomeScreen(),
+      home: LoginScreen(),
     );
   }
 }
