@@ -8,12 +8,8 @@ import 'package:tour_guide/firebaseoptions.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 void main() async {
-  // <--- 3. Make main async
-
-  // 4. Ensure Flutter widgets are initialized
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 5. Initialize Firebase Core
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
@@ -98,7 +94,7 @@ class MyApp extends StatelessWidget {
           iconColor: Colors.white70,
         ),
       ),
-      home: LoginScreen(),
+      home: HomeScreen(),
     );
   }
 }

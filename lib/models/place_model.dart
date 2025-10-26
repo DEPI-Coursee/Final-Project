@@ -8,6 +8,9 @@ class PlaceModel {
   final String? country;
   final String? category;
 
+  final String? imageUrl;
+  final String? description;
+
   PlaceModel({
     this.name,
     this.addressLine2,
@@ -17,6 +20,9 @@ class PlaceModel {
     this.wikidataId,
     this.country,
     this.category,
+
+    this.imageUrl,
+    this.description,
   });
 
   factory PlaceModel.fromJson(Map<String, dynamic> json) {
@@ -33,6 +39,39 @@ class PlaceModel {
       wikidataId: wikidata['wikidata'] as String?,
       country: properties['country'] as String?,
       category: properties['categories']?.first as String?,
+
+      imageUrl: null,
+      description: null,
+    );
+  }
+
+  // 🔑 Crucial method: Allows you to create a new model instance
+  // with updated fields (like image/description) while keeping the old data.
+  PlaceModel copyWith({
+    String? imageUrl,
+    String? description,
+    String? name,
+    String? addressLine2,
+    double? longitude,
+    double? latitude,
+    String? wikipediaUrl,
+    String? wikidataId,
+    String? country,
+    String? category,
+  }) {
+    return PlaceModel(
+      name: name ?? this.name,
+      addressLine2: addressLine2 ?? this.addressLine2,
+      longitude: longitude ?? this.longitude,
+      latitude: latitude ?? this.latitude,
+      wikipediaUrl: wikipediaUrl ?? this.wikipediaUrl,
+      wikidataId: wikidataId ?? this.wikidataId,
+      country: country ?? this.country,
+      category: category ?? this.category,
+
+      // Update the fields being fetched later
+      imageUrl: imageUrl ?? this.imageUrl,
+      description: description ?? this.description,
     );
   }
 
@@ -46,7 +85,8 @@ class PlaceModel {
       'wikidataId': wikidataId,
       'country': country,
       'category': category,
+      'imageUrl': imageUrl,
+      'description': description,
     };
   }
 }
-

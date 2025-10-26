@@ -6,25 +6,40 @@ import 'package:tour_guide/screens/visit_list_screen.dart';
 // import 'package:tour_guide/services/AuthService.dart';
 import 'package:tour_guide/services/places_service.dart';
 import 'package:tour_guide/models/place_model.dart';
+import 'package:tour_guide/services/wikipedia_image_service.dart';
 // import 'login_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   HomeScreen({super.key});
 
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
   final searchController = TextEditingController();
+
+  final WikipediaImageService wikiService = WikipediaImageService();
+
   // final authService = Authservice();
   final placesService = PlacesService();
 
   // Observable variables
   final RxList<PlaceModel> places = <PlaceModel>[].obs;
+
   final RxBool isLoading = false.obs;
+
   final RxString errorMessage = ''.obs;
 
   // API parameters (configurable)
   final categories = 'tourism.attraction';
+
   final longitude = 31.2357;
+
   final latitude = 30.0444;
+
   final radius = 10000.0;
+
   final limit = 20;
 
   // Fetch places from API
@@ -33,7 +48,7 @@ class HomeScreen extends StatelessWidget {
       isLoading.value = true;
       errorMessage.value = '';
 
-      final result = await placesService.getPlaces(
+      final List<PlaceModel> basicList = await placesService.getPlaces(
         categories: categories,
         longitude: longitude,
         latitude: latitude,
@@ -41,13 +56,58 @@ class HomeScreen extends StatelessWidget {
         limit: limit,
       );
 
-      places.value = result;
+      final List<PlaceModel> enrichedList = [];
+
+      for (var place in basicList) {
+        // Only proceed if we have a name to search Wikipedia with
+        if (place.name != null && place.name!.isNotEmpty) {
+          // Fetch image and description concurrently (saves time)
+          final results = await Future.wait([
+            wikiService.getBestImageUrl(place.name!),
+            wikiService.getSummary(place.name!),
+          ]);
+
+          final String? imageUrl = results[0];
+          final String? description = results[1];
+
+          print("DEBUG_TOURI: ${place.name} -> URL: $imageUrl");
+
+          final enrichedPlace = place.copyWith(
+            imageUrl: imageUrl,
+            description: description,
+          );
+
+          enrichedList.add(enrichedPlace);
+        } else {
+          // If no name, add the basic place model as is
+          enrichedList.add(place);
+        }
+      }
+
+      places.value = enrichedList;
+
+      // final result = await placesService.getPlaces(
+      //   categories: categories,
+      //   longitude: longitude,
+      //   latitude: latitude,
+      //   radius: radius,
+      //   limit: limit,
+      // );
+
+      // places.value = result;
     } catch (e) {
       errorMessage.value = e.toString();
       Get.snackbar('Error', errorMessage.value);
     } finally {
       isLoading.value = false;
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Call fetchPlaces once the screen is initialized
+    fetchPlaces();
   }
 
   @override
@@ -104,7 +164,7 @@ class HomeScreen extends StatelessWidget {
             //   onTap: () async {
             //     final success = await authService.signOut();
             //     if (success) {
-            //       Get.offAll(() => LoginScreen()); 
+            //       Get.offAll(() => LoginScreen());
             //     } else {
             //       ScaffoldMessenger.of(context).showSnackBar(
             //         const SnackBar(
@@ -140,8 +200,10 @@ class HomeScreen extends StatelessWidget {
                       hintText: 'Search a place',
                       suffixIcon: IconButton(
                         onPressed: () {},
-                        icon: Icon(Icons.search,
-                            color: Theme.of(context).primaryColor),
+                        icon: Icon(
+                          Icons.search,
+                          color: Theme.of(context).primaryColor,
+                        ),
                       ),
                     ),
                   ),
@@ -187,8 +249,11 @@ class HomeScreen extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.place_outlined,
-                            size: 64, color: Colors.white38),
+                        Icon(
+                          Icons.place_outlined,
+                          size: 64,
+                          color: Colors.white38,
+                        ),
                         const SizedBox(height: 16),
                         Text(
                           'No places found',
@@ -211,101 +276,143 @@ class HomeScreen extends StatelessWidget {
                     final place = places[index];
                     return InkWell(
                       onTap: () {
+                        // Ensure the enriched place model is passed to details
                         Get.to(() => PlaceDetails(place: place));
                       },
-                      child: Row(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Container(
-                              width: 180,
-                              height: 120,
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).primaryColor,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: Theme.of(context).primaryColor,
-                                  width: 3,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Row(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Container(
+                                width: 120, // Adjusted width
+                                height: 100, // Adjusted height
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).cardColor,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: Theme.of(context).primaryColor,
+                                    width: 1,
+                                  ),
                                 ),
-                              ),
-                              child: Center(
-                                child: Icon(
-                                  Icons.place,
-                                  size: 48,
-                                  color: Colors.white70,
-                                ),
+
+                                // DYNAMIC IMAGE DISPLAY LOGIC
+                                child:
+                                    place.imageUrl != null &&
+                                        place.imageUrl!.isNotEmpty
+                                    ? ClipRRect(
+                                        borderRadius: BorderRadius.circular(15),
+                                        child: Image.network(
+                                          place
+                                              .imageUrl!, // Use the fetched image URL
+                                          fit: BoxFit.cover,
+                                          width: double.infinity,
+                                          height: double.infinity,
+                                          errorBuilder:
+                                              (ctx, error, stackTrace) =>
+                                                  const Icon(
+                                                    Icons.broken_image,
+                                                    size: 48,
+                                                    color: Colors.white70,
+                                                  ),
+                                        ),
+                                      )
+                                    : Center(
+                                        // Fallback if no image URL was found/fetched
+                                        child: Icon(
+                                          Icons.place,
+                                          size: 48,
+                                          color: Colors.white70,
+                                        ),
+                                      ),
                               ),
                             ),
-                          ),
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.only(right: 8.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    place.name ?? 'Unknown Place',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium
-                                        ?.copyWith(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    place.addressLine2 ?? 'No address available',
-                                    style: Theme.of(context).textTheme.bodyMedium,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 6),
-                                  if (place.country != null || place.category != null)
-                                    Row(
-                                      // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Icon(
-                                          Icons.location_on,
-                                          size: 14,
-                                          color: Theme.of(context).primaryColor,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          place.country!,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodySmall
-                                              ?.copyWith(
-                                                color: Theme.of(context).primaryColor,
-                                              ),
-                                        ),
-                                        SizedBox(width: 10),
-                                        Icon(
-                                          Icons.category,
-                                          size: 14,
-                                          color: Theme.of(context).primaryColor,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          place.category!,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodySmall
-                                              ?.copyWith(
-                                                color: Theme.of(context).primaryColor,
-                                              ),
-                                        ),
-                                      ],
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.only(right: 8.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      place.name ?? 'Unknown Place',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium
+                                          ?.copyWith(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                ],
+                                    const SizedBox(height: 6),
+
+                                    // DYNAMIC DESCRIPTION: Display the enriched description
+                                    Text(
+                                      place.description ??
+                                          place.addressLine2 ??
+                                          'No description available.',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+
+                                    const SizedBox(height: 6),
+                                    if (place.country != null ||
+                                        place.category != null)
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.location_on,
+                                            size: 14,
+                                            color: Theme.of(
+                                              context,
+                                            ).primaryColor,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            place.country!,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall
+                                                ?.copyWith(
+                                                  color: Theme.of(
+                                                    context,
+                                                  ).primaryColor,
+                                                ),
+                                          ),
+                                          SizedBox(width: 10),
+                                          Icon(
+                                            Icons.category,
+                                            size: 14,
+                                            color: Theme.of(
+                                              context,
+                                            ).primaryColor,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            place.category!,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall
+                                                ?.copyWith(
+                                                  color: Theme.of(
+                                                    context,
+                                                  ).primaryColor,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     );
                   },

@@ -39,6 +39,7 @@ dependencies:
   flutter_animate: ^4.5.2
   firebase_auth: ^6.1.1
   firebase_core: ^4.2.0
+  dio: ^5.9.0
 
 dev_dependencies:
   flutter_test:

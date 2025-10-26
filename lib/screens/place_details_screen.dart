@@ -2,31 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:tour_guide/screens/login_screen.dart';
 import 'package:tour_guide/models/place_model.dart';
-// import 'package:tour_guide/services/AuthService.dart';
 
 class PlaceDetails extends StatelessWidget {
   final PlaceModel place;
-  
-  PlaceDetails({super.key, required this.place});
 
-  // final authservice = Authservice();
+  PlaceDetails({super.key, required this.place});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        elevation: 2,
-        titleSpacing: 10,
-        title: Text(
-          place.name ?? 'Place Details',
-          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-            fontFamily: 'Arial',
-            fontWeight: FontWeight.bold,
-            fontSize: 28,
-          ),
-        ),
-      ),
-      body: Padding(
+      appBar: AppBar(title: Text('Place Details')),
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Card(
           color: Theme.of(context).cardColor,
@@ -38,19 +24,43 @@ class PlaceDetails extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 🖼 Image
+              // DYNAMIC IMAGE SECTION
               ClipRRect(
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
                 ),
-                child: Image.network(
-                  'https://cdn-imgix.headout.com/media/images/c4a520a45f9aea6fbcaab0eee5089a5a-Louvre%20Paris%20Pyramids.jpg?auto=format&w=1069.6000000000001&h=687.6&q=90&ar=14%3A9&crop=faces&fit=crop',
-                  height: 200,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
+                child: place.imageUrl != null && place.imageUrl!.isNotEmpty
+                    ? Image.network(
+                        place.imageUrl!, // Use dynamic image URL
+                        height: 200,
+                        width: double.infinity,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          height: 200,
+                          color: Colors.grey.shade600,
+                          child: const Center(
+                            child: Icon(
+                              Icons.broken_image,
+                              size: 48,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ),
+                      )
+                    : Container(
+                        height: 200,
+                        color: Theme.of(context).cardColor,
+                        child: Center(
+                          child: Text(
+                            'Image Not Found for ${place.name}',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ),
+                      ),
               ),
+
+              // DETAILS SECTION
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -59,35 +69,38 @@ class PlaceDetails extends StatelessWidget {
                     // Title
                     Text(
                       place.name ?? 'Unknown Place',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontSize: 22, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
 
-                    // Address
+                    // DYNAMIC DESCRIPTION (from Wikipedia summary)
                     Text(
-                      place.addressLine2 ?? 'No address available',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontSize: 16,
-                      ),
+                      place.description ??
+                          place.addressLine2 ??
+                          'Detailed description not available.',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyLarge?.copyWith(fontSize: 16),
                     ),
                     const SizedBox(height: 16),
 
-                    // Additional Information
+                    // Additional Information Container (Geo Data)
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: Theme.of(context).primaryColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: Theme.of(context).primaryColor.withOpacity(0.3),
+                          color: Theme.of(
+                            context,
+                          ).primaryColor.withOpacity(0.3),
                         ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Country & Category
                           if (place.country != null)
                             Row(
                               children: [
@@ -120,7 +133,9 @@ class PlaceDetails extends StatelessWidget {
                               ],
                             ),
                           ],
-                          if (place.latitude != null && place.longitude != null) ...[
+                          // Coordinates
+                          if (place.latitude != null &&
+                              place.longitude != null) ...[
                             const SizedBox(height: 8),
                             Row(
                               children: [
@@ -137,19 +152,32 @@ class PlaceDetails extends StatelessWidget {
                               ],
                             ),
                           ],
+                          // Full Address
+                          const SizedBox(height: 8),
+                          Text(
+                            'Location:',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            place.addressLine2 ?? 'Address not listed.',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 20),
 
+                    // Buttons (Placeholder for Auth features)
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          // ScaffoldMessenger.of(context).showSnackBar(
-                          //   const SnackBar(content: Text("Added to Favorites")),
-                          // );
-                         // authservice.isLoggedIn()? Get.snackbar('added', 'static mess'): Get.to(LoginScreen()) ;
+                          // TODO: Implement Add to Favorite Logic
+                          Get.snackbar(
+                            'Action Needed',
+                            'Favorite logic placeholder triggered.',
+                          );
                         },
                         icon: const Icon(Icons.favorite_border),
                         label: const Text("Add to Favorite"),
@@ -166,12 +194,11 @@ class PlaceDetails extends StatelessWidget {
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          // ScaffoldMessenger.of(context).showSnackBar(
-                          //   const SnackBar(
-                          //     content: Text("Added to Visit List"),
-                          //   ),
-                          // );
-                          // authservice.isLoggedIn()? Get.snackbar('added', 'static mess'): Get.to(LoginScreen()) ;
+                          // TODO: Implement Add to Visit List Logic
+                          Get.snackbar(
+                            'Action Needed',
+                            'Visit list logic placeholder triggered.',
+                          );
                         },
                         icon: const Icon(Icons.list_alt),
                         label: const Text("Add to Visit List"),
