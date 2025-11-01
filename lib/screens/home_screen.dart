@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:tour_guide/screens/place_details_screen.dart';
 import 'package:tour_guide/screens/favorits_screen.dart';
@@ -7,6 +10,8 @@ import 'package:tour_guide/screens/visit_list_screen.dart';
 import 'package:tour_guide/services/places_service.dart';
 import 'package:tour_guide/models/place_model.dart';
 import 'package:tour_guide/services/wikipedia_image_service.dart';
+
+import '../models/location.dart';
 // import 'login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -34,16 +39,16 @@ class _HomeScreenState extends State<HomeScreen> {
   // API parameters (configurable)
   final categories = 'tourism.attraction';
 
-  final longitude = 31.2357;
+  //  final longitude = 31.2357;
 
-  final latitude = 30.0444;
+  //  final latitude = 30.0444;
 
   final radius = 10000.0;
 
   final limit = 20;
 
-  // Fetch places from API
-  Future<void> fetchPlaces() async {
+  //Fetch places from API
+  Future<void> fetchPlaces({required double longitude,required double latitude}) async {
     try {
       isLoading.value = true;
       errorMessage.value = '';
@@ -103,11 +108,34 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+
+
+
+  late List<PlaceModel> myplaces;
+  late Position location;
+
+  Future<void> getlocation() async {
+    location=await determinePosition();
+    fetchPlaces(latitude: location.latitude,longitude: location.longitude);
+  }
+
+  void startTimer(){
+    Timer.periodic(50.seconds, (timer) async {
+      print("hello");
+      final newLocation=await determinePosition();
+      final distance=Geolocator.distanceBetween(location.latitude, location.longitude, newLocation.latitude, newLocation.longitude);
+      if(distance>=200){
+        getlocation();
+      }
+    });
+  }
   @override
   void initState() {
     super.initState();
+    getlocation();
+    startTimer();
     // Call fetchPlaces once the screen is initialized
-    fetchPlaces();
+
   }
 
   @override
@@ -235,7 +263,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton(
-                          onPressed: fetchPlaces,
+                          onPressed: getlocation,
                           child: const Text('Retry'),
                         ),
                       ],
@@ -261,7 +289,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(height: 8),
                         ElevatedButton(
-                          onPressed: fetchPlaces,
+                          onPressed: getlocation,
                           child: const Text('Load Places'),
                         ),
                       ],

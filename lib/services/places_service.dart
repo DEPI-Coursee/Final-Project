@@ -8,7 +8,7 @@ class PlacesService {
     receiveTimeout: const Duration(seconds: 10),
   ));
 
-  final String apiKey = '89dc05ab7f2e4f3082488262f63ac859';
+  final String apiKey = '209b94b8f29c43018eeb659d8ba68684';
 
   Future<List<PlaceModel>> getPlaces({
     required String categories,

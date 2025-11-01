@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:tour_guide/screens/login_screen.dart';
 import 'package:tour_guide/models/place_model.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class PlaceDetails extends StatelessWidget {
   final PlaceModel place;
@@ -202,6 +203,26 @@ class PlaceDetails extends StatelessWidget {
                         },
                         icon: const Icon(Icons.list_alt),
                         label: const Text("Add to Visit List"),
+                        style: ElevatedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          final url=Uri.parse('geo:0,0?q=${place.latitude},${place.longitude}');
+                          launchUrl(url);
+
+
+                        },
+                        icon: const Icon(Icons.map),
+                        label: const Text("Open Google Map"),
                         style: ElevatedButton.styleFrom(
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
