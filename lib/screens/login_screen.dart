@@ -6,6 +6,7 @@ import 'package:tour_guide/services/AuthService.dart';
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
 
+
   @override
   Widget build(BuildContext context) {
     final AuthController controller = Get.put(AuthController());

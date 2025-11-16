@@ -6,137 +6,10 @@ import 'package:get/get.dart';
 import 'package:tour_guide/screens/place_details_screen.dart';
 import 'package:tour_guide/screens/favorits_screen.dart';
 import 'package:tour_guide/screens/visit_list_screen.dart';
-// import 'package:tour_guide/services/AuthService.dart';
-import 'package:tour_guide/services/places_service.dart';
-import 'package:tour_guide/models/place_model.dart';
-import 'package:tour_guide/services/wikipedia_image_service.dart';
+import '../controllers/home_controller.dart';
 
-import '../models/location.dart';
-// import 'login_screen.dart';
-
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends GetView<HomeController> {
   HomeScreen({super.key});
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  final searchController = TextEditingController();
-
-  final WikipediaImageService wikiService = WikipediaImageService();
-
-  // final authService = Authservice();
-  final placesService = PlacesService();
-
-  // Observable variables
-  final RxList<PlaceModel> places = <PlaceModel>[].obs;
-
-  final RxBool isLoading = false.obs;
-
-  final RxString errorMessage = ''.obs;
-
-  // API parameters (configurable)
-  final categories = 'tourism.attraction';
-
-  //  final longitude = 31.2357;
-
-  //  final latitude = 30.0444;
-
-  final radius = 10000.0;
-
-  final limit = 20;
-
-  //Fetch places from API
-  Future<void> fetchPlaces({required double longitude,required double latitude}) async {
-    try {
-      isLoading.value = true;
-      errorMessage.value = '';
-
-      final List<PlaceModel> basicList = await placesService.getPlaces(
-        categories: categories,
-        longitude: longitude,
-        latitude: latitude,
-        radius: radius,
-        limit: limit,
-      );
-
-      final List<PlaceModel> enrichedList = [];
-
-      for (var place in basicList) {
-        // Only proceed if we have a name to search Wikipedia with
-        if (place.name != null && place.name!.isNotEmpty) {
-          // Fetch image and description concurrently (saves time)
-          final results = await Future.wait([
-            wikiService.getBestImageUrl(place.name!),
-            wikiService.getSummary(place.name!),
-          ]);
-
-          final String? imageUrl = results[0];
-          final String? description = results[1];
-
-          print("DEBUG_TOURI: ${place.name} -> URL: $imageUrl");
-
-          final enrichedPlace = place.copyWith(
-            imageUrl: imageUrl,
-            description: description,
-          );
-
-          enrichedList.add(enrichedPlace);
-        } else {
-          // If no name, add the basic place model as is
-          enrichedList.add(place);
-        }
-      }
-
-      places.value = enrichedList;
-
-      // final result = await placesService.getPlaces(
-      //   categories: categories,
-      //   longitude: longitude,
-      //   latitude: latitude,
-      //   radius: radius,
-      //   limit: limit,
-      // );
-
-      // places.value = result;
-    } catch (e) {
-      errorMessage.value = e.toString();
-      Get.snackbar('Error', errorMessage.value);
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-
-
-
-  late List<PlaceModel> myplaces;
-  late Position location;
-
-  Future<void> getlocation() async {
-    location=await determinePosition();
-    fetchPlaces(latitude: location.latitude,longitude: location.longitude);
-  }
-
-  void startTimer(){
-    Timer.periodic(50.seconds, (timer) async {
-      print("hello");
-      final newLocation=await determinePosition();
-      final distance=Geolocator.distanceBetween(location.latitude, location.longitude, newLocation.latitude, newLocation.longitude);
-      if(distance>=200){
-        getlocation();
-      }
-    });
-  }
-  @override
-  void initState() {
-    super.initState();
-    getlocation();
-    startTimer();
-    // Call fetchPlaces once the screen is initialized
-
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -223,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 12),
                   TextField(
-                    controller: searchController,
+                    controller: controller.searchController,
                     decoration: InputDecoration(
                       hintText: 'Search a place',
                       suffixIcon: IconButton(
@@ -241,12 +114,12 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(
               child: Obx(() {
                 // Show loading indicator
-                if (isLoading.value) {
+                if (controller.isLoading.value) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
                 // Show error message
-                if (errorMessage.value.isNotEmpty) {
+                if (controller.errorMessage.value.isNotEmpty) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -257,13 +130,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          errorMessage.value,
+                          controller.errorMessage.value,
                           style: Theme.of(context).textTheme.bodySmall,
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton(
-                          onPressed: getlocation,
+                          onPressed: controller.getlocation,
                           child: const Text('Retry'),
                         ),
                       ],
@@ -272,7 +145,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 }
 
                 // Show empty state
-                if (places.isEmpty) {
+                if (controller.places.isEmpty) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -289,7 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(height: 8),
                         ElevatedButton(
-                          onPressed: getlocation,
+                          onPressed: controller.getlocation,
                           child: const Text('Load Places'),
                         ),
                       ],
@@ -299,9 +172,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 // Show places list
                 return ListView.builder(
-                  itemCount: places.length,
+                  itemCount: controller.places.length,
                   itemBuilder: (ctx, index) {
-                    final place = places[index];
+                    final place = controller.places[index];
                     return InkWell(
                       onTap: () {
                         // Ensure the enriched place model is passed to details

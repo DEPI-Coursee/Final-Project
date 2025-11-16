@@ -1,0 +1,20 @@
+Deploy on web full commands:
+    flutter clean
+    flutter pub get
+    flutter build web
+    firebase logout
+    firebase login
+    firebase init hosting >>> build/web
+    firebase deploy --only hosting
+    lw fe error a7oto fe file : firebase deploy --debug > debug.txt 2>&1
+    lw s'lny : ? File build/web/index.html already exists. Overwrite? >> no
+
+
+
+lw bagrab: (by propagate el changes le elweb 3lshan tban insatnly ala elmobile "lazm ykono fe nfs elwifi/network")
+    - terminal 1: flutter run -d web-server --web-port=5000 --web-hostname=0.0.0.0
+          // --web-port=5000 → البورت اللي هيشتغل عليه السيرفر
+          // --web-hostname=0.0.0.0 → يسمح لأي جهاز على نفس الشبكة يوصل للسيرفر
+    - terminal 2: ipconfig (ganna's local ip => 192.168.1.19)
+    - hakhod el ip aft7o mn safari "http://192.168.1.19:5000" hshof kol elchanges live
+

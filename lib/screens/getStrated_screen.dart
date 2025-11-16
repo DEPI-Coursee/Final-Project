@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 
-import 'home_screen.dart';
-
 class GetStartedScreen extends StatefulWidget {
   const GetStartedScreen({super.key});
 
@@ -87,7 +85,7 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
                       padding: const EdgeInsets.only(bottom: 50.0),
                       child: ElevatedButton(
                         onPressed: () {
-                          Get.off(HomeScreen());
+                          Get.offNamed('/home');
                         },
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(

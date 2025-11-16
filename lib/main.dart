@@ -4,8 +4,15 @@ import 'package:tour_guide/screens/getStrated_screen.dart';
 import 'package:tour_guide/screens/home_screen.dart';
 import 'package:tour_guide/screens/splash_screen.dart';
 import 'package:tour_guide/screens/login_screen.dart';
+import 'package:tour_guide/screens/register_screen.dart';
+import 'package:tour_guide/screens/place_details_screen.dart';
+import 'package:tour_guide/screens/favorits_screen.dart';
+import 'package:tour_guide/screens/visit_list_screen.dart';
 import 'package:tour_guide/firebaseoptions.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:tour_guide/controllers/location_controller.dart';
+import 'package:tour_guide/controllers/home_controller.dart';
+import 'package:tour_guide/controllers/auth_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,9 +27,6 @@ void main() async {
     print("Error initializing Firebase: $e");
   }
 
-  // 6. Inject essential controllers *after* initialization
-  // Get.put(AuthController()); // Ensure your AuthController is put here
-  // Get.put(AuthService()); // If you want to put the service directly
 
   runApp(const MyApp());
 }
@@ -35,6 +39,58 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Tour Guide App',
+      // Routes configuration
+      initialRoute: '/splash',
+      // Register LocationController as app-wide service (permanent)
+      initialBinding: BindingsBuilder(() {
+        Get.put(LocationController(), permanent: true);
+      }),
+      getPages: [
+        GetPage(
+          name: '/splash',
+          page: () => const SplashScreen(),
+        ),
+        GetPage(
+          name: '/get-started',
+          page: () => const GetStartedScreen(),
+        ),
+        GetPage(
+          name: '/login',
+          page: () => LoginScreen(),
+          binding: BindingsBuilder(() {
+            Get.lazyPut(() => AuthController());
+          }),
+        ),
+        GetPage(
+          name: '/register',
+          page: () => const RegisterScreen(),
+          binding: BindingsBuilder(() {
+            Get.lazyPut(() => AuthController());
+          }),
+        ),
+        GetPage(
+          name: '/home',
+          page: () => HomeScreen(),
+          binding: BindingsBuilder(() {
+            Get.lazyPut(() => HomeController());
+          }),
+        ),
+        GetPage(
+          name: '/place-details',
+          page: () {
+            final place = Get.arguments;
+            return PlaceDetails(place: place);
+          },
+        ),
+        GetPage(
+          name: '/favorites',
+          page: () => FavoritesScreen(),
+        ),
+        GetPage(
+          name: '/visit-list',
+          page: () => VisitListScreen(),
+        ),
+      ],
       theme: ThemeData(
         // Dark blue color scheme
         primarySwatch: Colors.blue,
@@ -94,7 +150,6 @@ class MyApp extends StatelessWidget {
           iconColor: Colors.white70,
         ),
       ),
-      home: HomeScreen(),
     );
   }
 }

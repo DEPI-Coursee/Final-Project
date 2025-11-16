@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:tour_guide/screens/home_screen.dart';
 
 import '../services/AuthService.dart';
-
+ 
 class AuthController extends GetxController {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
@@ -42,7 +41,7 @@ class AuthController extends GetxController {
 
     final signedIn = await authservice.signIn(email, password);
     signedIn
-        ? Get.offAll(HomeScreen())
+        ? Get.offAllNamed('/home')
         : Get.snackbar('error signing in', 'enter a valid email and password', snackPosition: SnackPosition.BOTTOM);
   }
 
@@ -69,7 +68,7 @@ class AuthController extends GetxController {
     isSubmitting.value = false;
 
     success != null
-        ? Get.offAll(HomeScreen())
+        ? Get.offAllNamed('/home')
         : Get.snackbar('Registration failed', 'Something went wrong', snackPosition: SnackPosition.BOTTOM);
   }
 
