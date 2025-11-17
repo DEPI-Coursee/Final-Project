@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'dart:async';
 
@@ -34,22 +33,28 @@ class _SplashScreenState extends State<SplashScreen> {
             end: Alignment.bottomRight,
           ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(width: double.infinity,),
-            Image.asset(
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(height: size.height * 0.1),
+              Image.asset(
                 "assets/logo5.png",
-                width: size.width *0.85,
+                width: size.width * 0.85,
               ),
-            Text("Tourio",
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontFamily: 'Caveat',
-              fontSize: 40,
-              color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.8),
-            ),)
-          ],
+              const SizedBox(height: 20),
+              Text(
+                "Tourio",
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontFamily: 'Caveat',
+                  fontSize: 40,
+                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.8),
+                ),
+              ),
+              SizedBox(height: size.height * 0.1),
+            ],
+          ),
         ),
       ),
     );
