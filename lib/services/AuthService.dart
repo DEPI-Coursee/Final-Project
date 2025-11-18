@@ -1,25 +1,52 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:get/get.dart';
 import 'package:tour_guide/models/UserModel.dart';
+import 'package:tour_guide/services/user_service.dart';
+
 class Authservice {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final UserService _userService = UserService();
 
-  Future<Usermodel?> signUp(String name,String email, String password) async {
+  Future<Usermodel?> signUp(String name, String email, String password) async {
     try {
       UserCredential result = await _auth.createUserWithEmailAndPassword(
           email: email, password: password);
       User? user = result.user;
 
+      if (user == null) {
+        print('Error: User is null after sign up');
+        return null;
+      }
+
       Usermodel newUser = Usermodel(
-        uid: user!.uid,
+        uid: user.uid,
         fullName: name,
         email: email,
         password: password,
+        // Initialize empty lists for favoritePlaces and visitedPlaces
+        favoritePlaces: [],
+        visitedPlaces: [],
       );
+
+      // Save user data to Firestore with empty lists
+      try {
+        await _userService.saveUser(newUser);
+        print('User successfully saved to Firestore');
+        // Verify slots were saved
+        await _userService.checkSlotsExist(newUser.uid);
+      } catch (firestoreError) {
+        // If Firestore save fails, log it but don't fail the entire signup
+        // The user is already created in Firebase Auth
+        print('Warning: Failed to save user to Firestore: $firestoreError');
+        // You might want to retry saving later or handle this differently
+      }
+
       return newUser;
+    } on FirebaseAuthException catch (e) {
+      print('Firebase Auth Error in sign up: ${e.code} - ${e.message}');
+      rethrow; // Re-throw to let the controller handle it
     } catch (e) {
       print('Error in sign up: $e');
-      return null;
+      rethrow; // Re-throw to let the controller handle it
     }
   }
   Future<bool> signIn(String email, String password) async {

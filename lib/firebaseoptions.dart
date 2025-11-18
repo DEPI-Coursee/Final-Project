@@ -26,7 +26,6 @@ class DefaultFirebaseOptions {
           storageBucket: "tour-a3380.appspot.com",
         );
       case TargetPlatform.iOS:
-        // You can add your iOS keys here later if you need them
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for iOS - '
           'you can reconfigure this by running the FlutterFire CLI again.',

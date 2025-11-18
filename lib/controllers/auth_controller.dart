@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../services/AuthService.dart';
  
@@ -59,17 +60,44 @@ class AuthController extends GetxController {
       return;
     }
     if (password.length < 6) {
-      Get.snackbar('Weak password', 'Password must be at least 8 characters', snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar('Weak password', 'Password must be at least 6 characters', snackPosition: SnackPosition.BOTTOM);
       return;
     }
 
     isSubmitting.value = true;
-    final success = await authservice.signUp(name, email, password);
-    isSubmitting.value = false;
+    try {
+      final success = await authservice.signUp(name, email, password);
+      isSubmitting.value = false;
 
-    success != null
-        ? Get.offAllNamed('/home')
-        : Get.snackbar('Registration failed', 'Something went wrong', snackPosition: SnackPosition.BOTTOM);
+      if (success != null) {
+        Get.offAllNamed('/home');
+      } else {
+        Get.snackbar('Registration failed', 'Something went wrong. Please try again.', snackPosition: SnackPosition.BOTTOM);
+      }
+    } on FirebaseAuthException catch (e) {
+      isSubmitting.value = false;
+      String errorMessage = 'Registration failed';
+      switch (e.code) {
+        case 'weak-password':
+          errorMessage = 'Password is too weak';
+          break;
+        case 'email-already-in-use':
+          errorMessage = 'Email is already registered';
+          break;
+        case 'invalid-email':
+          errorMessage = 'Invalid email address';
+          break;
+        case 'operation-not-allowed':
+          errorMessage = 'Registration is not allowed';
+          break;
+        default:
+          errorMessage = e.message ?? 'Something went wrong';
+      }
+      Get.snackbar('Registration failed', errorMessage, snackPosition: SnackPosition.BOTTOM);
+    } catch (e) {
+      isSubmitting.value = false;
+      Get.snackbar('Registration failed', 'Error: ${e.toString()}', snackPosition: SnackPosition.BOTTOM);
+    }
   }
 
   @override

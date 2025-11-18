@@ -159,7 +159,9 @@ class LoginScreen extends GetView<AuthController> {
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
                           TextButton(
-                            onPressed: () {}, // TODO: Navigate to sign up
+                            onPressed: () {
+                              Get.toNamed('/register');
+                            }, 
                             child: const Text('Sign up'),
                           ),
                         ],
