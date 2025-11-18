@@ -175,6 +175,7 @@ class PlaceDetails extends StatelessWidget {
                       child: ElevatedButton.icon(
                         onPressed: () {
                           // TODO: Implement Add to Favorite Logic
+                          Get.toNamed('/login');
                           Get.snackbar(
                             'Action Needed',
                             'Favorite logic placeholder triggered.',
@@ -196,6 +197,7 @@ class PlaceDetails extends StatelessWidget {
                       child: ElevatedButton.icon(
                         onPressed: () {
                           // TODO: Implement Add to Visit List Logic
+                          Get.toNamed('/login');
                           Get.snackbar(
                             'Action Needed',
                             'Visit list logic placeholder triggered.',

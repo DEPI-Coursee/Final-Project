@@ -7,6 +7,8 @@ import 'package:tour_guide/screens/place_details_screen.dart';
 import 'package:tour_guide/screens/favorits_screen.dart';
 import 'package:tour_guide/screens/visit_list_screen.dart';
 import '../controllers/home_controller.dart';
+import 'login_screen.dart';
+
 
 class HomeScreen extends GetView<HomeController> {
   HomeScreen({super.key});
@@ -59,22 +61,22 @@ class HomeScreen extends GetView<HomeController> {
               onTap: () {},
             ),
             const Divider(),
-            // ListTile(
-            //   leading: const Icon(Icons.logout, color: Colors.grey),
-            //   title: const Text('Logout'),
-            //   onTap: () async {
-            //     final success = await authService.signOut();
-            //     if (success) {
-            //       Get.offAll(() => LoginScreen());
-            //     } else {
-            //       ScaffoldMessenger.of(context).showSnackBar(
-            //         const SnackBar(
-            //           content: Text('Logout failed. Try again.'),
-            //         ),
-            //       );
-            //     }
-            //   },
-            // ),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.grey),
+              title: const Text('Logout'),
+              onTap: () async {
+                final success = await controller.authService.signOut();
+                if (success) {
+                  Get.offAll(() => LoginScreen());
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Logout failed. Try again.'),
+                    ),
+                  );
+                }
+              },
+            ),
           ],
         ),
       ),

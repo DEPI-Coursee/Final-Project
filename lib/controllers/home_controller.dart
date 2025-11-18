@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 
 import '../models/place_model.dart';
+import '../services/AuthService.dart';
 import '../services/places_service.dart';
 import '../services/wikipedia_image_service.dart';
 import 'location_controller.dart';
@@ -15,7 +16,7 @@ class HomeController extends GetxController{
   final WikipediaImageService wikiService = WikipediaImageService();
   final LocationController locationController = Get.find<LocationController>();
 
-  // final authService = Authservice();
+  final authService = Authservice();
   final placesService = PlacesService();
 
   late List<PlaceModel> myplaces;

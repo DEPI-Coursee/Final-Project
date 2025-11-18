@@ -13,6 +13,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:tour_guide/controllers/location_controller.dart';
 import 'package:tour_guide/controllers/home_controller.dart';
 import 'package:tour_guide/controllers/auth_controller.dart';
+import 'package:tour_guide/models/place_model.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -78,7 +79,16 @@ class MyApp extends StatelessWidget {
         GetPage(
           name: '/place-details',
           page: () {
-            final place = Get.arguments;
+            final place = Get.arguments as PlaceModel?;
+            if (place == null) {
+              // Return a fallback screen if no place is provided
+              return Scaffold(
+                appBar: AppBar(title: const Text('Error')),
+                body: const Center(
+                  child: Text('Place details not available'),
+                ),
+              );
+            }
             return PlaceDetails(place: place);
           },
         ),
