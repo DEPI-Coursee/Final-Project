@@ -2,14 +2,19 @@ import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
 
+
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
-    // if (kIsWeb) {
-    //   throw UnsupportedError(
-    //     'DefaultFirebaseOptions have not been configured for web - '
-    //     'you can reconfigure this by running the FlutterFire CLI again.',
-    //   );
-    // }
+    if (kIsWeb) {
+      return const FirebaseOptions(
+        apiKey: "AIzaSyBVHTZHT2BRCBkRFJlvFB-g1AYuPq_dqYw",
+        appId: "1:758189748301:web:5568214ba53d8a94186c04",
+        messagingSenderId: "758189748301",
+        projectId: "tour-a3380",
+        storageBucket: "tour-a3380.firebasestorage.app",
+        authDomain: "tour-a3380.firebaseapp.com",
+      );
+    }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         // PASTE YOUR ANDROID KEYS HERE
