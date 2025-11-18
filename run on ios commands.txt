@@ -3,7 +3,7 @@ Deploy on web full commands:
     flutter pub get
     flutter build web
     firebase logout
-    firebase login
+    n
     firebase init hosting >>> build/web
     firebase deploy --only hosting
     lw fe error a7oto fe file : firebase deploy --debug > debug.txt 2>&1
