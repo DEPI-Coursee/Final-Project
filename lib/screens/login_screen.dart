@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:tour_guide/controllers/auth_controller.dart';
-import 'package:tour_guide/services/AuthService.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends GetView<AuthController> {
   const LoginScreen({super.key});
 
 
   @override
   Widget build(BuildContext context) {
-    final AuthController controller = Get.put(AuthController());
-
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
