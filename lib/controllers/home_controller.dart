@@ -1,14 +1,14 @@
 import 'dart:async';
-
 import 'package:flutter/cupertino.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
+import 'package:tour_guide/services/Authservice.dart';
 
 import '../models/place_model.dart';
-import '../services/AuthService.dart';
 import '../services/places_service.dart';
 import '../services/wikipedia_image_service.dart';
 import 'location_controller.dart';
+import '../services/user_service.dart';
 
 class HomeController extends GetxController{
   final searchController = TextEditingController();
@@ -16,11 +16,18 @@ class HomeController extends GetxController{
   final WikipediaImageService wikiService = WikipediaImageService();
   final LocationController locationController = Get.find<LocationController>();
 
-  final authService = Authservice();
+  final authService = Get.find<Authservice>();
   final placesService = PlacesService();
+  final userService = Get.find<UserService>();
 
   late List<PlaceModel> myplaces;
   late Position location;
+
+  final RxList<PlaceModel> favoritePlaces = <PlaceModel>[].obs;
+  final RxBool isFavoritesLoading = false.obs;
+
+  final RxList<PlaceModel> visitListPlaces = <PlaceModel>[].obs;
+  final RxBool isVisitListLoading = false.obs;
 
   // Observable variables
   final RxList<PlaceModel> places = <PlaceModel>[].obs;
@@ -28,9 +35,12 @@ class HomeController extends GetxController{
   final RxString errorMessage = ''.obs;
 
   // API parameters (configurable)
-  final categories = 'tourism.attraction'; //???
+  final categories = 'tourism.attraction';
   final radius = 10000.0;
   final limit = 20;
+
+  String? pendingPlaceId;
+  String? pendingActionType;
 
   Future<void> getlocation() async {
     location = await locationController.determinePosition();
@@ -52,17 +62,20 @@ class HomeController extends GetxController{
       }
     });
   }
+
   @override
   void onInit() {
     super.onInit();
-    // getlocation();///////
-
+    getlocation();
     startTimer();
-    // Call fetchPlaces once the screen is initialized
+
+    // ✅ Load favorites when controller initializes
+    if(authService.isLoggedIn()){
+      fetchFavoritePlaces();
+    }
   }
 
-  //Fetch places from API
-  Future<void> fetchPlaces({required double longitude,required double latitude}) async {
+  Future<void> fetchPlaces({required double longitude, required double latitude}) async {
     try {
       isLoading.value = true;
       errorMessage.value = '';
@@ -78,9 +91,7 @@ class HomeController extends GetxController{
       final List<PlaceModel> enrichedList = [];
 
       for (var place in basicList) {
-        // Only proceed if we have a name to search Wikipedia with
         if (place.name != null && place.name!.isNotEmpty) {
-          // Fetch image and description concurrently (saves time)
           final results = await Future.wait([
             wikiService.getBestImageUrl(place.name!),
             wikiService.getSummary(place.name!),
@@ -96,15 +107,11 @@ class HomeController extends GetxController{
             description: description,
           );
 
-          enrichedList.add(enrichedPlace);//place with image and description
-        } else {
-          // If no name, add the basic place model as is
-          // enrichedList.add(place);(lw mlosh esm msh 3ayzeno)
+          enrichedList.add(enrichedPlace);
         }
       }
 
       places.value = enrichedList;
-
     } catch (e) {
       errorMessage.value = e.toString();
       Get.snackbar('Error', errorMessage.value);
@@ -113,6 +120,188 @@ class HomeController extends GetxController{
     }
   }
 
+  String generateplaceid(PlaceModel place) {
+    if (place.wikidataId != null && place.wikidataId!.isNotEmpty) {
+      return place.wikidataId!;
+    }
+    return '${place.name}-${place.latitude}-${place.longitude}';
+  }
 
+  // ✅ FIXED: Fetch favorites from Firebase
+  Future<void> fetchFavoritePlaces() async {
+    try {
+      isFavoritesLoading.value = true;
+      errorMessage.value = '';
+      
+      print('🔍 Starting fetchFavoritePlaces...');
+      
+      final uid = authService.getCurrentUserId();
+      if (uid == null) {
+        print('❌ No user logged in');
+        errorMessage.value = 'Please login to view favorites';
+        isFavoritesLoading.value = false;
+        return;
+      }
 
+      print('✅ User ID: $uid');
+
+      final user = await userService.getUser(uid);
+      
+      if (user == null) {
+        print('❌ User data not found');
+        favoritePlaces.value = [];
+        isFavoritesLoading.value = false;
+        return;
+      }
+
+      print('✅ User data loaded');
+      print('📋 Favorite place IDs: ${user.favoritePlaces}');
+
+      if (user.favoritePlaces == null || user.favoritePlaces!.isEmpty) {
+        print('ℹ️ No favorite places found');
+        favoritePlaces.value = [];
+        isFavoritesLoading.value = false;
+        return;
+      }
+
+      final List<PlaceModel> loadedPlaces = [];
+
+      for (String placeId in user.favoritePlaces!) {
+        print('🔄 Parsing place: $placeId');
+        PlaceModel place = await _parsePlaceFromId(placeId);
+        loadedPlaces.add(place);
+        print('✅ Place parsed: ${place.name}');
+      }
+
+      favoritePlaces.value = loadedPlaces;
+      print('🎉 Loaded ${loadedPlaces.length} favorite places');
+      
+    } catch (e) {
+      errorMessage.value = 'Error loading favorites: $e';
+      print('❌ Error in fetchFavoritePlaces: $e');
+    } finally {
+      isFavoritesLoading.value = false;
+    }
+  }
+
+  // ✅ FIXED: Add to favorites (was calling itself before!)
+  Future<void> addToFavorites(PlaceModel place) async {
+    try {
+      print('➕ Adding to favorites: ${place.name}');
+      
+      final uid = authService.getCurrentUserId();
+      if (uid == null) {
+        print('❌ User not logged in');
+        Get.snackbar('Login Required', 'Please login to add favorites');
+        Get.toNamed('/login');
+        return;
+      }
+
+      final placeId = generateplaceid(place);
+      print('📝 Generated place ID: $placeId');
+      
+      await userService.addToFavorites(uid, placeId);
+      print('✅ Added to Firebase');
+
+      // Refresh favorites list to show the new addition
+      await fetchFavoritePlaces();
+
+      Get.snackbar(
+        'Success',
+        'Added "${place.name}" to favorites',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      print('❌ Error adding to favorites: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to add to favorites: $e',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
+  // ✅ Remove from favorites
+  Future<void> removeFromFavorites(PlaceModel place) async {
+    try {
+      print('➖ Removing from favorites: ${place.name}');
+      
+      final uid = authService.getCurrentUserId();
+      if (uid == null) return;
+
+      final placeId = generateplaceid(place);
+      await userService.removeFromFavorites(uid, placeId);
+      
+      // Remove from local list immediately for better UX
+      favoritePlaces.removeWhere((p) => generateplaceid(p) == placeId);
+      
+      print('✅ Removed from favorites');
+
+      Get.snackbar(
+        'Removed',
+        'Place removed from favorites',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      print('❌ Error removing from favorites: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to remove from favorites: $e',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
+  // ✅ Check if place is in favorites
+  bool isFavorite(PlaceModel place) {
+    final placeId = generateplaceid(place);
+    return favoritePlaces.any((p) => generateplaceid(p) == placeId);
+  }
+
+  // ✅ Parse PlaceModel from stored placeId
+  Future<PlaceModel> _parsePlaceFromId(String placeId) async {
+    print('🔍 Parsing placeId: $placeId');
+    
+    // Check if it's a custom format: "name-lat-lng"
+    if (placeId.contains('-') && placeId.split('-').length >= 3) {
+      final parts = placeId.split('-');
+
+      // Try to parse last two parts as coordinates
+      final lastPart = parts[parts.length - 1];
+      final secondLastPart = parts[parts.length - 2];
+
+      final lng = double.tryParse(lastPart);
+      final lat = double.tryParse(secondLastPart);
+
+      if (lat != null && lng != null) {
+        // It's custom format: "name-lat-lng"
+        final name = parts.sublist(0, parts.length - 2).join('-');
+        print('📍 Parsed as coordinates: $name ($lat, $lng)');
+
+        // Fetch image and description from Wikipedia
+        final imageUrl = await wikiService.getBestImageUrl(name);
+        final description = await wikiService.getSummary(name);
+
+        return PlaceModel(
+          name: name,
+          latitude: lat,
+          longitude: lng,
+          imageUrl: imageUrl,
+          description: description,
+        );
+      }
+    }
+
+    // If it's a wikidataId or couldn't parse, create basic place
+    print('🆔 Parsed as wikidataId: $placeId');
+    final imageUrl = await wikiService.getBestImageUrl(placeId);
+    final description = await wikiService.getSummary(placeId);
+
+    return PlaceModel(
+      name: placeId,
+      wikidataId: placeId,
+      imageUrl: imageUrl,
+      description: description,
+    );
+  }
 }

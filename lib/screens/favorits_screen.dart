@@ -1,26 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import '../controllers/home_controller.dart';
+import '../models/place_model.dart';
 
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
 
-  final List<String> cardData = const [
-    'Giza Pyramids',
-    'Valley of the Kings',
-    'Karnak Temple',
-    'Abu Simbel Temple',
-    'Luxor Temple',
-    'The Sphinx',
-    'Aswan Dam',
-    'Nile River Cruise',
-    'Abu Qir',
-  ];
-
   @override
   Widget build(BuildContext context) {
+    // ✅ Just Get.find since it's in AppBinding
+    final homeController = Get.find<HomeController>();
+    
+    // ✅ Ensure favorites are fetched when screen opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (homeController.authService.isLoggedIn()) {
+        print('📱 FavoritesScreen: Triggering fetchFavoritePlaces');
+        homeController.fetchFavoritePlaces();
+      } else {
+        print('⚠️ FavoritesScreen: User not logged in');
+      }
+    });
+
     return Scaffold(
       appBar: AppBar(
-        // title: const Text("Favorites"),
-        // centerTitle: true,
+        title: const Text('Favorites'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              print('🔄 Manual refresh triggered');
+              homeController.fetchFavoritePlaces();
+            },
+          ),
+        ],
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -33,41 +45,123 @@ class FavoritesScreen extends StatelessWidget {
             ],
           ),
         ),
-        child: Scrollbar(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header section outside container
-                Row(
-                  children: [
-                    Icon(
-                      Icons.favorite,
-                      color: Theme.of(context).primaryColor,
-                      size: 24,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header section
+              Row(
+                children: [
+                  Icon(
+                    Icons.favorite,
+                    color: Theme.of(context).primaryColor,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Your Favorite Places',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w500,
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Your Favorite Places',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w500,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Discover and manage your saved destinations',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontFamily: 'Caveat',
+                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.8),
+                ),
+              ),
+              const SizedBox(height: 20),
+              
+              // Cards container with Obx
+              Obx(() {
+                print('🖼️ UI Update - Loading: ${homeController.isFavoritesLoading.value}, Favorites: ${homeController.favoritePlaces.length}, Error: ${homeController.errorMessage.value}');
+                
+                if (homeController.isFavoritesLoading.value) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(40.0),
+                      child: Column(
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 16),
+                          Text('Loading your favorites...'),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Discover and manage your saved destinations',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontFamily: 'Caveat',
-                    color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.8),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                
-                // Cards container
-                Container(
+                  );
+                }
+
+                if (homeController.errorMessage.value.isNotEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(40.0),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 64,
+                            color: Colors.red.shade400,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            homeController.errorMessage.value,
+                            style: Theme.of(context).textTheme.bodyLarge,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton.icon(
+                            onPressed: () => homeController.fetchFavoritePlaces(),
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                if (homeController.favoritePlaces.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(40.0),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.favorite_border,
+                            size: 64,
+                            color: Theme.of(context).primaryColor.withOpacity(0.5),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No favorites yet',
+                            style: Theme.of(context).textTheme.headlineSmall,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Start adding places to your favorites!',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton.icon(
+                            onPressed: () => Get.toNamed('/home'),
+                            icon: const Icon(Icons.explore),
+                            label: const Text('Explore Places'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                print('✅ Rendering ${homeController.favoritePlaces.length} favorite places');
+
+                return Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: Theme.of(context).cardColor.withOpacity(0.3),
@@ -87,20 +181,24 @@ class FavoritesScreen extends StatelessWidget {
                   child: GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: cardData.length,
+                    itemCount: homeController.favoritePlaces.length,
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
                       crossAxisSpacing: 12.0,
                       mainAxisSpacing: 12.0,
-                      childAspectRatio: 0.9,
+                      childAspectRatio: 0.75,
                     ),
                     itemBuilder: (context, index) {
-                      return DestinationCard(title: cardData[index]);
+                      final place = homeController.favoritePlaces[index];
+                      return DestinationCard(
+                        place: place,
+                        onRemove: () => homeController.removeFromFavorites(place),
+                      );
                     },
                   ),
-                ),
-              ],
-            ),
+                );
+              }),
+            ],
           ),
         ),
       ),
@@ -109,9 +207,14 @@ class FavoritesScreen extends StatelessWidget {
 }
 
 class DestinationCard extends StatelessWidget {
-  final String title;
+  final PlaceModel place;
+  final VoidCallback onRemove;
 
-  const DestinationCard({super.key, required this.title});
+  const DestinationCard({
+    super.key,
+    required this.place,
+    required this.onRemove,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -122,145 +225,94 @@ class DestinationCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10.0),
       ),
-      margin: EdgeInsets.zero,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 45,
-            child: Image.network(
-              "https://cdn-imgix.headout.com/media/images/c4a520a45f9aea6fbcaab0eee5089a5a-Louvre%20Paris%20Pyramids.jpg?auto=format&w=1069.6000000000001&h=687.6&q=90&ar=14%3A9&crop=faces&fit=crop",
-              fit: BoxFit.cover,
-              width: double.infinity,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  color: Colors.grey,
-                  child: const Center(
-                    child: Text(
-                      'Image failed to load',
-                      style: TextStyle(fontSize: 8),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          Expanded(
-            flex: 55,
-            child: Padding(
-              padding: const EdgeInsets.all(4.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 2),
-                          Row(
-                            children: [
-                              Icon(Icons.location_on, size: 8, color: Colors.grey),
-                              SizedBox(width: 2),
-                              Text(
-                                'Cairo, Egypt',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  fontSize: 8,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      Text(
-                        '\$225',
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
+      child: InkWell(
+        onTap: () {
+          Get.toNamed('/place-details', arguments: place);
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Image
+            Expanded(
+              flex: 3,
+              child: place.imageUrl != null && place.imageUrl!.isNotEmpty
+                  ? Image.network(
+                      place.imageUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        color: Colors.grey.shade800,
+                        child: const Icon(
+                          Icons.broken_image,
+                          size: 32,
+                          color: Colors.white54,
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 1),
-                  Flexible(
-                    child: Text(
-                      'The magnificent ancient pyramids and Great Sphinx...',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontSize: 8,
+                    )
+                  : Container(
+                      color: Colors.grey.shade800,
+                      child: const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.place,
+                            size: 32,
+                            color: Colors.white54,
+                          ),
+                        ],
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Planned for:',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                fontSize: 7,
-                              )),
-                          Text('15/10/2025',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                fontSize: 8,
-                                fontWeight: FontWeight.bold,
-                              )),
-                        ],
+            ),
+            // Title and Remove Button
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        place.name ?? 'Unknown Place',
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      Row(
-                        children: [
-                          ElevatedButton(
-                            onPressed: () {},
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 3),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(4)),
-                              elevation: 2,
-                              minimumSize: Size.zero,
-                            ),
-                            child: Text(
-                              'Details',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 8,
-                                  color: Colors.white),
-                            ),
-                          ),
-                          SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: IconButton(
-                              onPressed: () {},
-                              icon: const Icon(Icons.favorite),
-                              iconSize: 12,
-                              padding: EdgeInsets.zero,
-                              color: Theme.of(context).primaryColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.delete, size: 18),
+                          color: Colors.red.shade400,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          onPressed: () {
+                            Get.defaultDialog(
+                              title: 'Remove Favorite',
+                              middleText: 'Remove "${place.name}" from favorites?',
+                              textConfirm: 'Remove',
+                              textCancel: 'Cancel',
+                              confirmTextColor: Colors.white,
+                              buttonColor: Colors.red,
+                              cancelTextColor: Theme.of(context).primaryColor,
+                              onConfirm: () {
+                                onRemove();
+                                Get.back();
+                              },
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

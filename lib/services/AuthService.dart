@@ -78,6 +78,14 @@ class Authservice {
       return false;
     }
   }
-
-
+  String? getCurrentUserId() {
+    return _auth.currentUser?.uid;
+  }
+  Future<Usermodel?> getCurrentUser() async {
+    final userid = getCurrentUserId();
+    if (userid == null) {
+      return null;
+    }
+    return await _userService.getUser(userid);
+  }
 }

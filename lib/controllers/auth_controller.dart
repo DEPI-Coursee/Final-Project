@@ -1,18 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
-import '../services/AuthService.dart';
+import 'package:tour_guide/services/Authservice.dart';
+import 'home_controller.dart';
  
 class AuthController extends GetxController {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
-  final RxBool isPasswordVisible = false.obs;
-  final RxBool isSubmitting = false.obs;
-  final authservice = Authservice();
+ 
 
+
+   final RxBool isPasswordVisible = false.obs;
+  final RxBool isSubmitting = false.obs;
+  late final Authservice authService;
+
+
+
+@override
+  
+  void onInit() {
+    super.onInit();
+   authService = Get.find<Authservice>();   
+   
+  }
 
   void togglePasswordVisibility() {
     isPasswordVisible.value = !isPasswordVisible.value;
@@ -40,7 +52,7 @@ class AuthController extends GetxController {
     await Future.delayed(const Duration(milliseconds: 800));
     isSubmitting.value = false;
 
-    final signedIn = await authservice.signIn(email, password);
+    final signedIn = await authService.signIn(email, password);
     signedIn
         ? Get.offAllNamed('/home')
         : Get.snackbar('error signing in', 'enter a valid email and password', snackPosition: SnackPosition.BOTTOM);
@@ -66,7 +78,7 @@ class AuthController extends GetxController {
 
     isSubmitting.value = true;
     try {
-      final success = await authservice.signUp(name, email, password);
+      final success = await authService.signUp(name, email, password);
       isSubmitting.value = false;
 
       if (success != null) {

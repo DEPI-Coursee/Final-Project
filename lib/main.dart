@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:tour_guide/bindings/AppBinding.dart';
 import 'package:tour_guide/screens/getStrated_screen.dart';
 import 'package:tour_guide/screens/home_screen.dart';
 import 'package:tour_guide/screens/splash_screen.dart';
@@ -14,6 +15,7 @@ import 'package:tour_guide/controllers/location_controller.dart';
 import 'package:tour_guide/controllers/home_controller.dart';
 import 'package:tour_guide/controllers/auth_controller.dart';
 import 'package:tour_guide/models/place_model.dart';
+import 'package:tour_guide/services/Authservice.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,9 +45,7 @@ class MyApp extends StatelessWidget {
       // Routes configuration
       initialRoute: '/splash',
       // Register LocationController as app-wide service (permanent)
-      initialBinding: BindingsBuilder(() {
-        Get.put(LocationController(), permanent: true);
-      }),
+      initialBinding: AppBinding(),
       getPages: [
         GetPage(
           name: '/splash',
