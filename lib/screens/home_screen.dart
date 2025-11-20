@@ -7,6 +7,7 @@ import 'package:tour_guide/screens/place_details_screen.dart';
 import 'package:tour_guide/screens/favorits_screen.dart';
 import 'package:tour_guide/screens/visit_list_screen.dart';
 import '../controllers/home_controller.dart';
+import 'package:tour_guide/services/AuthService.dart';
 import 'login_screen.dart';
 
 
@@ -67,7 +68,7 @@ class HomeScreen extends GetView<HomeController> {
               onTap: () async {
                 final success = await controller.authService.signOut();
                 if (success) {
-                  Get.offAll(() => LoginScreen());
+                  Get.offNamed('/login');
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(

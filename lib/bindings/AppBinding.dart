@@ -11,7 +11,7 @@ class AppBinding extends Bindings {
     Get.put(Authservice(), permanent: true);
     Get.put(LocationController(), permanent: true);
     Get.put(UserService(), permanent: true);
-    Get.put(HomeController, permanent: true);
+    Get.put(HomeController(), permanent: true);
         print('✅ AppBinding dependencies registered');
 
   }

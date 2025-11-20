@@ -11,14 +11,22 @@ import 'package:tour_guide/screens/favorits_screen.dart';
 import 'package:tour_guide/screens/visit_list_screen.dart';
 import 'package:tour_guide/firebaseoptions.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:tour_guide/controllers/location_controller.dart';
 import 'package:tour_guide/controllers/home_controller.dart';
 import 'package:tour_guide/controllers/auth_controller.dart';
 import 'package:tour_guide/models/place_model.dart';
 import 'package:tour_guide/services/Authservice.dart';
+import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:tour_guide/services/notification_service.dart';
+import 'package:tour_guide/services/work_manager_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // NotificationService notificationService = NotificationService();
+  // await notificationService.initialize();
+  await WorkManagerService().initialize();
+  await NotificationService().initialize();
+
 
   try {
     await Firebase.initializeApp(
