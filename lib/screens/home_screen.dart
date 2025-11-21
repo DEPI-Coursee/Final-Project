@@ -10,7 +10,6 @@ import '../controllers/home_controller.dart';
 import 'package:tour_guide/services/AuthService.dart';
 import 'login_screen.dart';
 
-
 class HomeScreen extends GetView<HomeController> {
   HomeScreen({super.key});
 
@@ -71,9 +70,7 @@ class HomeScreen extends GetView<HomeController> {
                   Get.offNamed('/login');
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Logout failed. Try again.'),
-                    ),
+                    const SnackBar(content: Text('Logout failed. Try again.')),
                   );
                 }
               },
