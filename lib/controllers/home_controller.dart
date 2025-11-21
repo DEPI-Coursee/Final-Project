@@ -21,7 +21,7 @@ class HomeController extends GetxController{
   final userService = Get.find<UserService>();
 
   late List<PlaceModel> myplaces;
-  late Position location;
+  Position? location;
 
   final RxList<PlaceModel> favoritePlaces = <PlaceModel>[].obs;
   final RxBool isFavoritesLoading = false.obs;
@@ -43,22 +43,50 @@ class HomeController extends GetxController{
   String? pendingActionType;
 
   Future<void> getlocation() async {
-    location = await locationController.determinePosition();
-    fetchPlaces(latitude: location.latitude, longitude: location.longitude);
+    try {
+      final currentLocation = await locationController.determinePosition();
+      location = currentLocation;
+      await fetchPlaces(
+        latitude: currentLocation.latitude,
+        longitude: currentLocation.longitude,
+      );
+    } catch (e) {
+      errorMessage.value = e.toString();
+      print('Error getting location: $e');
+    }
   }
   
   void startTimer(){
     Timer.periodic(50.seconds, (timer) async {
       print("hello");
-      final newLocation = await locationController.determinePosition();
-      final distance = locationController.calculateDistance(
-        location.latitude, 
-        location.longitude, 
-        newLocation.latitude, 
-        newLocation.longitude,
-      );
-      if(distance >= 200){
-        getlocation();
+      try {
+        final currentLocation = location;
+        final newLocation = await locationController.determinePosition();
+
+        if (currentLocation == null) {
+          location = newLocation;
+          await fetchPlaces(
+            latitude: newLocation.latitude,
+            longitude: newLocation.longitude,
+          );
+          return;
+        }
+
+        final distance = locationController.calculateDistance(
+          currentLocation.latitude, 
+          currentLocation.longitude, 
+          newLocation.latitude, 
+          newLocation.longitude,
+        );
+        if(distance >= 200){
+          location = newLocation;
+          await fetchPlaces(
+            latitude: newLocation.latitude,
+            longitude: newLocation.longitude,
+          );
+        }
+      } catch (e) {
+        print('Error while updating location in timer: $e');
       }
     });
   }
