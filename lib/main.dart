@@ -17,15 +17,27 @@ import 'package:tour_guide/models/place_model.dart';
 import 'package:tour_guide/services/Authservice.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:tour_guide/services/notification_service.dart';
+import 'package:tour_guide/services/user_service.dart';
 import 'package:tour_guide/services/work_manager_service.dart';
+
+import 'controllers/location_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // NotificationService notificationService = NotificationService();
   // await notificationService.initialize();
-  await WorkManagerService().initialize();
   await NotificationService().initialize();
+  // Defer notification permission request to avoid conflict with location permission
+  // Request it after a short delay to let location permission request complete first
+  Future.delayed(const Duration(seconds: 50), () {
+    NotificationService().takePermission();
+  });
+  // await WorkManagerService().initialize();
+  // WorkManagerService().registerVisitListTask();
+  final workManager = WorkManagerService();
+  await workManager.initialize();
+  workManager.registerVisitListTask();
 
 
   try {
@@ -99,14 +111,24 @@ class MyApp extends StatelessWidget {
             }
             return PlaceDetails(place: place);
           },
+          binding: BindingsBuilder(() {
+            Get.lazyPut(() => HomeController());
+          }),
+
         ),
         GetPage(
           name: '/favorites',
           page: () => FavoritesScreen(),
+          binding: BindingsBuilder(() {
+            Get.lazyPut(() => HomeController());
+          }),
         ),
         GetPage(
           name: '/visit-list',
           page: () => VisitListScreen(),
+          binding: BindingsBuilder(() {
+            Get.lazyPut(() => HomeController());
+          }),
         ),
       ],
       theme: ThemeData(

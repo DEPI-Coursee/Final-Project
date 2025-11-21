@@ -34,7 +34,7 @@ class NotificationService {
           channelKey: 'visitList',
           title: title,
           body: body,
-          duration: Duration(seconds: 10)), //يعني notification يقعد قد إيه visible قبل ما يختفي
+          duration: Duration(seconds: 3)), //يعني notification يقعد قد إيه visible قبل ما يختفي
       actionButtons: [ //by3ml button gwa el notification
             NotificationActionButton(
               key: 'visitList', //button id => identifies which button the user has pressed

@@ -8,11 +8,16 @@ class AppBinding extends Bindings {
   @override
   void dependencies() {
     print('🔧 Initializing AppBinding dependencies...');
-    Get.put(Authservice(), permanent: true);
-    Get.put(LocationController(), permanent: true);
-    Get.put(UserService(), permanent: true);
-    Get.put(HomeController(), permanent: true);
-        print('✅ AppBinding dependencies registered');
+    // Get.put(Authservice(), permanent: true);
+    Get.lazyPut<Authservice>(() => Authservice(), fenix: true);
+    Get.lazyPut<LocationController>(() => LocationController(), fenix: true);
+    Get.lazyPut<UserService>(() => UserService(), fenix: true);
+
+
+    // Get.put(LocationController(), permanent: true);
+    // Get.put(UserService(), permanent: true);
+    // Get.put(HomeController(), permanent: true);
+    print('✅ AppBinding dependencies registered');
 
   }
 }
