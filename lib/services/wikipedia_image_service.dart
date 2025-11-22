@@ -12,180 +12,132 @@ class WikipediaImageService {
     return arabicCount > (text.length / 2);
   }
 
-  // Helper: Searches Wikipedia for the most relevant page title.
+  // --- Safe GET helper with debug ---
+  Future<Response?> _safeGet(String url, Map<String, dynamic> params) async {
+    try {
+      print('📡 GET $url with params: $params');
+      final response = await _dio.get(url, queryParameters: params);
+      return response;
+    } on DioException catch (e) {
+      print('⚠️ Dio Error: ${e.message} (url=$url)');
+      return null;
+    }
+  }
+
+  // --- Search Wikipedia title by name ---
   Future<String?> _searchWikiTitle(String placeName) async {
+    if (placeName.isEmpty) return null;
     final String apiBase = _isPrimarilyArabic(placeName)
         ? _wikiApiBaseAr
         : _wikiApiBaseEn;
 
-    final Map<String, dynamic> searchParams = {
+    final params = {
       'action': 'query',
       'list': 'search',
       'srsearch': placeName,
       'format': 'json',
       'srlimit': 1,
     };
-    try {
-      final response = await _dio.get(apiBase, queryParameters: searchParams);
-      final search = response.data['query']?['search'] as List<dynamic>?;
-      if (search != null && search.isNotEmpty) {
-        return search.first['title'] as String?;
-      }
-    } on DioException catch (e) {
-      print("Dio Error searching Wikipedia: ${e.message}");
+
+    final response = await _safeGet(apiBase, params);
+    final search = response?.data['query']?['search'] as List<dynamic>?;
+    if (search != null && search.isNotEmpty) {
+      return search.first['title'] as String?;
     }
     return null;
   }
 
-  // --- Secondary Fallback Logic (Wikidata Q-ID and P18 Lookup) ---
-
-  Future<String?> _getWikiDataEntityId(String wikiTitle) async {
-    final String apiBase = _isPrimarilyArabic(wikiTitle)
-        ? _wikiApiBaseAr
-        : _wikiApiBaseEn;
-
-    final Map<String, dynamic> matchParams = {
-      'action': 'query',
-      'prop': 'pageprops',
-      'titles': wikiTitle,
-      'format': 'json',
-    };
-
-    try {
-      final response = await _dio.get(apiBase, queryParameters: matchParams);
-      final pages = response.data['query']?['pages'] as Map<String, dynamic>?;
-
-      if (pages != null) {
-        final pageId = pages.keys.first;
-        final pageData = pages[pageId];
-
-        // Return Q-ID if found
-        if (pageId != '-1' && pageData?['pageprops'] != null) {
-          return pageData['pageprops']['wikibase_item'] as String?;
-        }
-      }
-    } on DioException catch (e) {
-      print("Dio Error fetching Q-ID: ${e.message}");
-    }
-    return null;
-  }
-
+  // --- Get Wikidata P18 image filename ---
   Future<String?> _getFilenameFromWikidata(String entityId) async {
-    final Map<String, dynamic> propertyParams = {
+    if (entityId.isEmpty) return null;
+    final params = {
       'action': 'wbgetentities',
       'ids': entityId,
       'props': 'claims',
       'format': 'json',
     };
-    try {
-      final response = await _dio.get(
-        _wikidataApiBase,
-        queryParameters: propertyParams,
-      );
-      final claims =
-          response.data['entities']?[entityId]?['claims']
-              as Map<String, dynamic>?;
-
-      // P18 is the Wikidata property ID for the "Image" file
-      if (claims != null && claims.containsKey('P18')) {
-        final imageClaim = claims['P18'][0];
-        return imageClaim['mainsnak']['datavalue']['value'] as String?;
-      }
-    } on DioException catch (e) {
-      print("Dio Error fetching P18 filename: ${e.message}");
+    final response = await _safeGet(_wikidataApiBase, params);
+    final claims =
+        response?.data['entities']?[entityId]?['claims']
+            as Map<String, dynamic>?;
+    if (claims != null && claims.containsKey('P18')) {
+      final imageClaim = claims['P18'][0];
+      return imageClaim['mainsnak']['datavalue']['value'] as String?;
     }
     return null;
   }
 
-  // Combines Q-ID and P18 logic to get the final image URL.
-  Future<String?> _fallbackImageLookup(String placeName) async {
-    final String? wikiTitle = await _searchWikiTitle(placeName);
-    if (wikiTitle == null) return null;
-
-    final String? entityId = await _getWikiDataEntityId(wikiTitle);
-    if (entityId == null) return null;
-
-    final String? filename = await _getFilenameFromWikidata(entityId);
-    if (filename == null) return null;
-
-    // Convert filename to direct URL using MediaWiki API (Commons)
-    final Map<String, dynamic> imageParams = {
+  Future<String?> _getImageUrlFromFilename(String filename) async {
+    if (filename.isEmpty) return null;
+    final params = {
       'action': 'query',
-      'titles': 'File:$filename', // Must prefix with 'File:'
+      'titles': 'File:$filename',
       'prop': 'imageinfo',
       'iiprop': 'url',
       'format': 'json',
     };
-
-    try {
-      final response = await _dio.get(
-        _wikiApiBaseEn,
-        queryParameters: imageParams,
-      ); // Use English base for Commons
-      final pages = response.data['query']?['pages'] as Map<String, dynamic>?;
-
-      if (pages != null) {
-        final pageId = pages.keys.first;
-        final infoList = pages[pageId]?['imageinfo'] as List?;
-        if (pageId != '-1' && infoList != null && infoList.isNotEmpty) {
-          return infoList.first['url'] as String?;
-        }
+    final response = await _safeGet(_wikiApiBaseEn, params);
+    final pages = response?.data['query']?['pages'] as Map<String, dynamic>?;
+    if (pages != null) {
+      final pageId = pages.keys.first;
+      final infoList = pages[pageId]?['imageinfo'] as List?;
+      if (pageId != '-1' && infoList != null && infoList.isNotEmpty) {
+        return infoList.first['url'] as String?;
       }
-    } on DioException catch (e) {
-      print("Dio Error fetching final image URL from filename: ${e.message}");
     }
     return null;
   }
 
-  // --- Master Public Image Method ---
-
-  Future<String?> getBestImageUrl(String placeName) async {
-    final String? wikiTitle = await _searchWikiTitle(placeName);
-    if (wikiTitle == null) return null;
-
-    final String apiBase = _isPrimarilyArabic(placeName)
-        ? _wikiApiBaseAr
-        : _wikiApiBaseEn;
-
-    // 1. PRIMARY ATTEMPT: Use the reliable pageimages property (fastest)
-    final Map<String, dynamic> primaryParams = {
-      'action': 'query',
-      'titles': wikiTitle,
-      'prop': 'pageimages',
-      'pithumbsize': 400,
+  // --- Convert Q-ID to Wikipedia title ---
+  Future<String?> _getWikiDataEntityTitle(String entityId) async {
+    if (entityId.isEmpty) return null;
+    final params = {
+      'action': 'wbgetentities',
+      'ids': entityId,
+      'props': 'sitelinks',
       'format': 'json',
-      'redirects': 1,
     };
-
-    try {
-      final response = await _dio.get(apiBase, queryParameters: primaryParams);
-      final pages = response.data['query']?['pages'] as Map<String, dynamic>?;
-
-      if (pages != null) {
-        final thumbnailUrl =
-            pages[pages.keys.first]?['thumbnail']?['source'] as String?;
-        if (thumbnailUrl != null) {
-          return thumbnailUrl; // 🚀 SUCCESS: Return fast result
-        }
-      }
-    } on DioException {
-      // Log, but do not stop. Proceed to fallback.
+    final response = await _safeGet(_wikidataApiBase, params);
+    final sitelinks =
+        response?.data['entities']?[entityId]?['sitelinks']
+            as Map<String, dynamic>?;
+    if (sitelinks != null) {
+      final enTitle = sitelinks['enwiki']?['title'] as String?;
+      final arTitle = sitelinks['arwiki']?['title'] as String?;
+      return enTitle ?? arTitle;
     }
-
-    // 2. SECONDARY ATTEMPT: Fallback to the Q-ID/P18 lookup (slower but deeper)
-    return _fallbackImageLookup(placeName);
+    return null;
   }
 
-  // --- Public Method: Get Short Summary/Description (Remains Correct) ---
-  Future<String?> getSummary(String placeName) async {
-    final String? wikiTitle = await _searchWikiTitle(placeName);
-    if (wikiTitle == null) return null;
-
-    final String apiBase = _isPrimarilyArabic(placeName)
+  // --- Get Q-ID from Wikipedia title ---
+  Future<String?> _getWikiDataEntityId(String wikiTitle) async {
+    if (wikiTitle.isEmpty) return null;
+    final apiBase = _isPrimarilyArabic(wikiTitle)
         ? _wikiApiBaseAr
         : _wikiApiBaseEn;
+    final params = {
+      'action': 'query',
+      'prop': 'pageprops',
+      'titles': wikiTitle,
+      'format': 'json',
+    };
+    final response = await _safeGet(apiBase, params);
+    final pages = response?.data['query']?['pages'] as Map<String, dynamic>?;
+    if (pages != null) {
+      final pageId = pages.keys.first;
+      final pageData = pages[pageId];
+      if (pageId != '-1' && pageData?['pageprops'] != null) {
+        return pageData['pageprops']['wikibase_item'] as String?;
+      }
+    }
+    return null;
+  }
 
-    final Map<String, dynamic> params = {
+  // --- Fetch summary safely ---
+  Future<String?> _fetchSummary(String wikiTitle, {String lang = 'en'}) async {
+    if (wikiTitle.isEmpty) return null;
+    final apiBase = (lang == 'ar') ? _wikiApiBaseAr : _wikiApiBaseEn;
+    final params = {
       'action': 'query',
       'prop': 'extracts',
       'titles': wikiTitle,
@@ -195,25 +147,96 @@ class WikipediaImageService {
       'explaintext': 1,
       'redirects': 1,
     };
-
-    try {
-      final response = await _dio.get(apiBase, queryParameters: params);
-      final pages = response.data['query']?['pages'] as Map<String, dynamic>?;
-
-      if (pages != null) {
-        final pageId = pages.keys.first;
-        final pageData = pages[pageId];
-
-        if (pageId != '-1' && pageData?['extract'] != null) {
-          return pageData['extract'] as String?;
-        }
+    final response = await _safeGet(apiBase, params);
+    final pages = response?.data['query']?['pages'] as Map<String, dynamic>?;
+    if (pages != null) {
+      final pageId = pages.keys.first;
+      final pageData = pages[pageId];
+      if (pageId != '-1' && pageData?['extract'] != null) {
+        return pageData['extract'] as String?;
       }
-    } on DioException catch (e) {
-      print("Dio Error fetching summary for '$placeName': ${e.message}");
     }
     return null;
   }
+
+  // --- Master Public Image Method ---
+  Future<String?> getBestImageUrl(String query) async {
+    if (query.isEmpty) return null;
+
+    String? url;
+    try {
+      if (query.startsWith('Q')) {
+        final filename = await _getFilenameFromWikidata(query);
+        if (filename != null) url = await _getImageUrlFromFilename(filename);
+        if (url != null) return url;
+      }
+
+      final wikiTitle = await _searchWikiTitle(query);
+      if (wikiTitle == null) return null;
+
+      final apiBase = _isPrimarilyArabic(query)
+          ? _wikiApiBaseAr
+          : _wikiApiBaseEn;
+      final params = {
+        'action': 'query',
+        'titles': wikiTitle,
+        'prop': 'pageimages',
+        'pithumbsize': 400,
+        'format': 'json',
+        'redirects': 1,
+      };
+      final response = await _safeGet(apiBase, params);
+      final pages = response?.data['query']?['pages'] as Map<String, dynamic>?;
+      if (pages != null) {
+        url = pages[pages.keys.first]?['thumbnail']?['source'] as String?;
+        if (url != null) return url;
+
+        // fallback to English if Arabic has no image
+        if (apiBase == _wikiApiBaseAr) {
+          final responseEn = await _safeGet(_wikiApiBaseEn, params);
+          final pagesEn =
+              responseEn?.data['query']?['pages'] as Map<String, dynamic>?;
+          url =
+              pagesEn?[pagesEn.keys.first]?['thumbnail']?['source'] as String?;
+          if (url != null) return url;
+        }
+      }
+
+      // fallback via Q-ID
+      final entityId = await _getWikiDataEntityId(wikiTitle);
+      if (entityId != null) {
+        final filename = await _getFilenameFromWikidata(entityId);
+        if (filename != null) {
+          url = await _getImageUrlFromFilename(filename);
+        }
+      }
+    } catch (e) {
+      print('⚠️ Error in getBestImageUrl: $e');
+    }
+    return url;
+  }
+
+  // --- Get summary / description ---
+  Future<String?> getSummary(String query) async {
+    if (query.isEmpty) return null;
+
+    String? wikiTitle;
+    if (query.startsWith('Q')) {
+      wikiTitle = await _getWikiDataEntityTitle(query);
+    } else {
+      wikiTitle = await _searchWikiTitle(query);
+    }
+    if (wikiTitle == null) return null;
+
+    String? summary = await _fetchSummary(wikiTitle, lang: 'ar');
+    if (summary == null || summary.length < 40) {
+      final summaryEn = await _fetchSummary(wikiTitle, lang: 'en');
+      if (summaryEn != null) summary = summaryEn;
+    }
+    return summary;
+  }
 }
+
 // import 'package:dio/dio.dart';
 
 // class WikipediaImageService {
