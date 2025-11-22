@@ -4,13 +4,95 @@ import 'package:tour_guide/controllers/home_controller.dart';
 import 'package:tour_guide/models/place_model.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class PlaceDetails extends StatelessWidget {
-  final PlaceModel place;
+class PlaceDetails extends StatefulWidget {
 
-  PlaceDetails({super.key, required this.place});
+  const PlaceDetails({super.key});
+
+  @override
+  State<PlaceDetails> createState() => _PlaceDetailsState();
+}
+
+class _PlaceDetailsState extends State<PlaceDetails> {
+  PlaceModel? place;
+  
+  @override
+  void initState() {
+    super.initState();
+    // Handle both PlaceModel directly or from arguments map
+    final args = Get.arguments;
+    
+    if (args is PlaceModel) {
+      place = args;
+    } else if (args is Map<String, dynamic> && args.containsKey('place')) {
+      place = args['place'] as PlaceModel?;
+    }
+    
+    // If no valid place found, this shouldn't happen as route handler checks for null
+    // But we'll handle it gracefully just in case
+    if (place == null) {
+      // Redirect to home immediately
+      Future.microtask(() {
+        if (mounted) {
+          Get.offAllNamed('/home');
+        }
+      });
+      return;
+    }
+    
+    // Check if we just returned from login and need to execute an action
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAndExecutePendingAction();
+    });
+  }
+
+  void _checkAndExecutePendingAction() {
+    // Check if there's a pending action from login
+    final currentPlace = place;
+    if (currentPlace == null) return;
+    
+    final homeController = Get.find<HomeController>();
+    if (homeController.authService.isLoggedIn()) {
+      // Check if we have a pending action stored
+      if (homeController.pendingActionType != null && 
+          homeController.pendingPlaceId != null) {
+        final action = homeController.pendingActionType;
+        final placeId = homeController.pendingPlaceId;
+        
+        // Verify this is the correct place
+        final currentPlaceId = homeController.getPlaceId(currentPlace);
+        if (placeId == currentPlaceId) {
+          if (action == 'visitList') {
+            // Show date/time picker for visit list
+            Future.delayed(const Duration(milliseconds: 300), () {
+              if (mounted) {
+                _showDateTimePicker(context, currentPlace);
+              }
+            });
+          } else if (action == 'favorite') {
+            // Add to favorites automatically
+            homeController.addToFavorites(currentPlace);
+          }
+          
+          // Clear pending action
+          homeController.pendingActionType = null;
+          homeController.pendingPlaceId = null;
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    // If place is null, show loading/error state
+    if (place == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Place Details')),
+        body: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+    
     return Scaffold(
       appBar: AppBar(title: Text('Place Details')),
       body: SingleChildScrollView(
@@ -31,9 +113,9 @@ class PlaceDetails extends StatelessWidget {
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
                 ),
-                child: place.imageUrl != null && place.imageUrl!.isNotEmpty
+                child: place!.imageUrl != null && place!.imageUrl!.isNotEmpty
                     ? Image.network(
-                        place.imageUrl!,
+                        place!.imageUrl!,
                         height: 200,
                         width: double.infinity,
                         fit: BoxFit.cover,
@@ -54,7 +136,7 @@ class PlaceDetails extends StatelessWidget {
                         color: Theme.of(context).cardColor,
                         child: Center(
                           child: Text(
-                            'Image Not Found for ${place.name}',
+                            'Image Not Found for ${place!.name}',
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
                         ),
@@ -69,7 +151,7 @@ class PlaceDetails extends StatelessWidget {
                   children: [
                     // Title
                     Text(
-                      place.name ?? 'Unknown Place',
+                      place!.name ?? 'Unknown Place',
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(fontSize: 22, fontWeight: FontWeight.bold),
                     ),
@@ -77,8 +159,8 @@ class PlaceDetails extends StatelessWidget {
 
                     // Description
                     Text(
-                      place.description ??
-                          place.addressLine2 ??
+                      place!.description ??
+                          place!.addressLine2 ??
                           'Detailed description not available.',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: 16),
                     ),
@@ -97,7 +179,7 @@ class PlaceDetails extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (place.country != null)
+                          if (place!.country != null)
                             Row(
                               children: [
                                 Icon(
@@ -107,12 +189,12 @@ class PlaceDetails extends StatelessWidget {
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  'Country: ${place.country}',
+                                  'Country: ${place!.country}',
                                   style: Theme.of(context).textTheme.bodyMedium,
                                 ),
                               ],
                             ),
-                          if (place.category != null) ...[
+                          if (place!.category != null) ...[
                             const SizedBox(height: 8),
                             Row(
                               children: [
@@ -123,13 +205,13 @@ class PlaceDetails extends StatelessWidget {
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  'Category: ${place.category}',
+                                  'Category: ${place!.category}',
                                   style: Theme.of(context).textTheme.bodyMedium,
                                 ),
                               ],
                             ),
                           ],
-                          if (place.latitude != null && place.longitude != null) ...[
+                          if (place!.latitude != null && place!.longitude != null) ...[
                             const SizedBox(height: 8),
                             Row(
                               children: [
@@ -140,7 +222,7 @@ class PlaceDetails extends StatelessWidget {
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  'Coordinates: ${place.latitude!.toStringAsFixed(4)}, ${place.longitude!.toStringAsFixed(4)}',
+                                  'Coordinates: ${place!.latitude!.toStringAsFixed(4)}, ${place!.longitude!.toStringAsFixed(4)}',
                                   style: Theme.of(context).textTheme.bodyMedium,
                                 ),
                               ],
@@ -153,7 +235,7 @@ class PlaceDetails extends StatelessWidget {
                                 ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           Text(
-                            place.addressLine2 ?? 'Address not listed.',
+                            place!.addressLine2 ?? 'Address not listed.',
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
                         ],
@@ -167,10 +249,58 @@ class PlaceDetails extends StatelessWidget {
                       child: ElevatedButton.icon(
                         onPressed: () async {
                           final homeController = Get.find<HomeController>();
-                          await homeController.addToFavorites(place);
+                          if (homeController.authService.isLoggedIn()) {
+                            await homeController.addToFavorites(place!);
+                          } else {
+                            Get.snackbar(
+                              'Login Required',
+                              'Please login to add to favorites',
+                              snackPosition: SnackPosition.BOTTOM,
+                            );
+                            // Store return route with place as argument
+                            Get.toNamed('/login', arguments: {
+                              'returnRoute': '/place-details',
+                              'place': place!,
+                              'action': 'favorite',
+                            });
+                          }
                         },
                         icon: const Icon(Icons.favorite_border),
                         label: const Text("Add to Favorite"),
+                        style: ElevatedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    
+                    // ✅ Add to Visit List Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          final homeController = Get.find<HomeController>();
+                          if (!homeController.authService.isLoggedIn()) {
+                            Get.snackbar(
+                              'Login Required',
+                              'Please login to add to visit list',
+                              snackPosition: SnackPosition.BOTTOM,
+                            );
+                            // Store return route with place as argument
+                            Get.toNamed('/login', arguments: {
+                              'returnRoute': '/place-details',
+                              'place': place!,
+                              'action': 'visitList',
+                            });
+                            return;
+                          }
+                          await _showDateTimePicker(context, place!);
+                        },
+                        icon: const Icon(Icons.calendar_today),
+                        label: const Text("Add to Visit List"),
                         style: ElevatedButton.styleFrom(
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -186,7 +316,7 @@ class PlaceDetails extends StatelessWidget {
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          final url = Uri.parse('geo:0,0?q=${place.latitude},${place.longitude}');
+                          final url = Uri.parse('geo:0,0?q=${place!.latitude},${place!.longitude}');
                           launchUrl(url);
                         },
                         icon: const Icon(Icons.map),
@@ -207,5 +337,40 @@ class PlaceDetails extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _showDateTimePicker(BuildContext context, PlaceModel place) async {
+    // Pick date
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      helpText: 'Select Visit Date',
+    );
+
+    if (pickedDate == null) return; // User cancelled date picker
+
+    // Pick time
+    final TimeOfDay? pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+      helpText: 'Select Visit Time',
+    );
+
+    if (pickedTime == null) return; // User cancelled time picker
+
+    // Combine date and time
+    final DateTime visitDateTime = DateTime(
+      pickedDate.year,
+      pickedDate.month,
+      pickedDate.day,
+      pickedTime.hour,
+      pickedTime.minute,
+    );
+
+    // Add to visit list
+    final homeController = Get.find<HomeController>();
+    await homeController.addToVisitListWithDateTime(place, visitDateTime);
   }
 }

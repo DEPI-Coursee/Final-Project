@@ -3,14 +3,26 @@ import 'package:get/get.dart';
 import '../controllers/home_controller.dart';
 import '../models/place_model.dart';
 
-class FavoritesScreen extends StatelessWidget {
+class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
 
+  @override
+  State<FavoritesScreen> createState() => _FavoritesScreenState();
+}
+
+class _FavoritesScreenState extends State<FavoritesScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Refresh favorites when screen opens
+    final controller = Get.find<HomeController>();
+    controller.fetchFavoritePlaces();
+  }
   @override
   Widget build(BuildContext context) {
     // ✅ Just Get.find since it's in AppBinding
     final homeController = Get.find<HomeController>();
-    
+
     // ✅ Ensure favorites are fetched when screen opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (homeController.authService.isLoggedIn()) {
@@ -76,11 +88,11 @@ class FavoritesScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              
+
               // Cards container with Obx
               Obx(() {
                 print('🖼️ UI Update - Loading: ${homeController.isFavoritesLoading.value}, Favorites: ${homeController.favoritePlaces.length}, Error: ${homeController.errorMessage.value}');
-                
+
                 if (homeController.isFavoritesLoading.value) {
                   return const Center(
                     child: Padding(

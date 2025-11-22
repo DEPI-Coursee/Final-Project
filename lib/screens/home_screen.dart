@@ -45,14 +45,32 @@ class HomeScreen extends GetView<HomeController> {
               leading: const Icon(Icons.favorite),
               title: const Text('Favorites'),
               onTap: () {
-                Get.to(FavoritesScreen());
+                if (controller.authService.isLoggedIn()) {
+                  Get.to(FavoritesScreen());
+                } else {
+                  Get.snackbar(
+                    'Login Required',
+                    'Please login to view your favorites',
+                    snackPosition: SnackPosition.BOTTOM,
+                  );
+                  Get.toNamed('/login');
+                }
               },
             ),
             ListTile(
               leading: const Icon(Icons.list_alt),
               title: const Text('Visit List'),
               onTap: () {
-                Get.to(VisitListScreen());
+                if (controller.authService.isLoggedIn()) {
+                  Get.to(VisitListScreen());
+                } else {
+                  Get.snackbar(
+                    'Login Required',
+                    'Please login to view your visit list',
+                    snackPosition: SnackPosition.BOTTOM,
+                  );
+                  Get.toNamed('/login');
+                }
               },
             ),
             ListTile(
@@ -177,8 +195,8 @@ class HomeScreen extends GetView<HomeController> {
                     final place = controller.places[index];
                     return InkWell(
                       onTap: () {
-                        // Ensure the enriched place model is passed to details
-                        Get.to(() => PlaceDetails(place: place));
+                        // Navigate to place details with the place as argument
+                        Get.toNamed('/place-details', arguments: place);
                       },
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8.0),

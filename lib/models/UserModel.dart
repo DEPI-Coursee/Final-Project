@@ -7,7 +7,7 @@ class Usermodel {
   final double? currentLat;
   final double? currentLng;
   final List<String>? favoritePlaces;
-  final List<String>? visitedPlaces;
+  final Map<String, DateTime>? visitListItems; // Map of placeId -> visitDateTime
 
 
   Usermodel({
@@ -18,11 +18,19 @@ class Usermodel {
     this.currentLat,
     this.currentLng,
     this.favoritePlaces,
-    this.visitedPlaces,
+    this.visitListItems,
   });
 
   // Convert UserModel to Map for Firestore
   Map<String, dynamic> toJson() {
+    // Convert DateTime to ISO string for Firestore
+    Map<String, String>? visitListItemsJson;
+    if (visitListItems != null) {
+      visitListItemsJson = visitListItems!.map(
+        (key, value) => MapEntry(key, value.toIso8601String())
+      );
+    }
+    
     return {
       'uid': uid,
       'fullName': fullName,
@@ -30,13 +38,24 @@ class Usermodel {
       'currentLat': currentLat,
       'currentLng': currentLng,
       'favoritePlaces': favoritePlaces ?? [],
-      'visitedPlaces': visitedPlaces ?? [],
+      'visitListItems': visitListItemsJson ?? {},
       // Note: password is not saved to Firestore for security
     };
   }
 
   // Create UserModel from Firestore document
   factory Usermodel.fromJson(Map<String, dynamic> json) {
+    Map<String, DateTime>? visitListItems;
+    if (json['visitListItems'] != null) {
+      final items = json['visitListItems'] as Map;
+      visitListItems = items.map(
+        (key, value) => MapEntry(
+          key as String,
+          DateTime.parse(value as String)
+        )
+      );
+    }
+
     return Usermodel(
       uid: json['uid'] as String,
       fullName: json['fullName'] as String?,
@@ -46,9 +65,7 @@ class Usermodel {
       favoritePlaces: json['favoritePlaces'] != null 
           ? List<String>.from(json['favoritePlaces'] as List)
           : [],
-      visitedPlaces: json['visitedPlaces'] != null
-          ? List<String>.from(json['visitedPlaces'] as List)
-          : [],
+      visitListItems: visitListItems,
     );
   }
 
@@ -59,7 +76,7 @@ class Usermodel {
     double? currentLat,
     double? currentLng,
     List<String>? favoritePlaces,
-    List<String>? visitedPlaces,
+    Map<String, DateTime>? visitListItems,
   }) {
     return Usermodel(
       uid: uid,
@@ -68,7 +85,7 @@ class Usermodel {
       currentLat: currentLat ?? this.currentLat,
       currentLng: currentLng ?? this.currentLng,
       favoritePlaces: favoritePlaces ?? this.favoritePlaces,
-      visitedPlaces: visitedPlaces ?? this.visitedPlaces,
+      visitListItems: visitListItems ?? this.visitListItems,
     );
   }
 }

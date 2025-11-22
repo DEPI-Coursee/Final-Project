@@ -15,7 +15,7 @@ class UserService {
           .set(userData);
       print('User saved to Firestore: ${user.uid}');
       print('  - favoritePlaces slot: ${userData['favoritePlaces']}');
-      print('  - visitedPlaces slot: ${userData['visitedPlaces']}');
+      print('  - visitListItems slot: ${userData['visitListItems']}');
     } catch (e) {
       print('Error saving user to Firestore: $e');
       rethrow;
@@ -50,16 +50,22 @@ class UserService {
     }
   }
 
-  // Update user's visited places
-  Future<void> updateVisitedPlaces(String uid, List<String> visitedPlaces) async {
+  // Update user's visit list items
+  Future<void> updateVisitListItems(String uid, Map<String, DateTime> visitListItems) async {
     try {
+      // Convert DateTime to ISO string for Firestore
+      final visitListItemsJson = visitListItems.map(
+        (key, value) => MapEntry(key, value.toIso8601String())
+      );
+      
       await _firestore
           .collection(_collectionName)
           .doc(uid)
-          .update({'visitedPlaces': visitedPlaces});
-      print('Visited places updated for user: $uid');
+          .update({'visitListItems': visitListItemsJson});
+          // If the field visitListItems already exists → it is replaced.
+      print('Visit list items updated for user: $uid');
     } catch (e) {
-      print('Error updating visited places: $e');
+      print('Error updating visit list items: $e');
       rethrow;
     }
   }
@@ -96,19 +102,19 @@ class UserService {
     }
   }
 
-  // Add a place to visit list
-  Future<void> addToVisitList(String uid, String placeId) async {
+  // Add a place to visit list with date/time
+  Future<void> addToVisitListWithDateTime(String uid, String placeId, DateTime visitDateTime) async {
     try {
       final user = await getUser(uid);
       if (user != null) {
-        final visited = List<String>.from(user.visitedPlaces ?? []);
-        if (!visited.contains(placeId)) {
-          visited.add(placeId);
-          await updateVisitedPlaces(uid, visited);
-        }
+        //flow : gets the user current visitListItems -> add to it -> propogate the updated visitListItems to the database
+        final visitListItems = Map<String, DateTime>.from(user.visitListItems ?? {});
+        visitListItems[placeId] = visitDateTime; // Add or update
+        await updateVisitListItems(uid, visitListItems);
+        print('Added place $placeId to visit list with date/time: $visitDateTime');
       }
     } catch (e) {
-      print('Error adding to visit list: $e');
+      print('Error adding to visit list with date/time: $e');
       rethrow;
     }
   }
@@ -118,9 +124,10 @@ class UserService {
     try {
       final user = await getUser(uid);
       if (user != null) {
-        final visited = List<String>.from(user.visitedPlaces ?? []);
-        visited.remove(placeId);
-        await updateVisitedPlaces(uid, visited);
+        final visitListItems = Map<String, DateTime>.from(user.visitListItems ?? {});
+        visitListItems.remove(placeId);
+        await updateVisitListItems(uid, visitListItems);
+        print('Removed place $placeId from visit list');
       }
     } catch (e) {
       print('Error removing from visit list: $e');
@@ -151,21 +158,21 @@ class UserService {
       if (doc.exists) {
         final data = doc.data()!;
         final hasFavoritePlaces = data.containsKey('favoritePlaces');
-        final hasVisitedPlaces = data.containsKey('visitedPlaces');
+        final hasVisitListItems = data.containsKey('visitListItems');
         
         print('\n=== SLOT VERIFICATION ===');
         print('User ID: $uid');
         print('favoritePlaces slot exists: $hasFavoritePlaces');
-        print('visitedPlaces slot exists: $hasVisitedPlaces');
+        print('visitListItems slot exists: $hasVisitListItems');
         if (hasFavoritePlaces) {
           print('  favoritePlaces value: ${data['favoritePlaces']}');
         }
-        if (hasVisitedPlaces) {
-          print('  visitedPlaces value: ${data['visitedPlaces']}');
+        if (hasVisitListItems) {
+          print('  visitListItems value: ${data['visitListItems']}');
         }
         print('========================\n');
         
-        return hasFavoritePlaces && hasVisitedPlaces;
+        return hasFavoritePlaces && hasVisitListItems;
       }
       print('User document does not exist');
       return false;

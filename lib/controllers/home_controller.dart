@@ -9,6 +9,7 @@ import '../services/places_service.dart';
 import '../services/wikipedia_image_service.dart';
 import 'location_controller.dart';
 import '../services/user_service.dart';
+import '../services/notification_service.dart';
 
 class HomeController extends GetxController {
   final searchController = TextEditingController();
@@ -19,6 +20,7 @@ class HomeController extends GetxController {
   final authService = Get.find<Authservice>();
   final placesService = PlacesService();
   final userService = Get.find<UserService>();
+  final notificationService = NotificationService();
 
   late List<PlaceModel> myplaces;
   Position? location;
@@ -27,6 +29,7 @@ class HomeController extends GetxController {
   final RxBool isFavoritesLoading = false.obs;
 
   final RxList<PlaceModel> visitListPlaces = <PlaceModel>[].obs;
+  final RxMap<String, DateTime> visitListItemsWithDates = <String, DateTime>{}.obs;
   final RxBool isVisitListLoading = false.obs;
 
   // Observable variables
@@ -51,7 +54,7 @@ class HomeController extends GetxController {
         longitude: currentLocation.longitude,
       );
       print(
-      "📍 Current device location: ${location.latitude}, ${location.longitude}",
+      "📍 Current device location: ${currentLocation.latitude}, ${currentLocation.longitude}",
     );
     } catch (e) {
       errorMessage.value = e.toString();
@@ -100,10 +103,11 @@ class HomeController extends GetxController {
     getlocation();
     startTimer();
 
-    // ✅ Load favorites when controller initializes
-    if (authService.isLoggedIn()) {
-      fetchFavoritePlaces();
-    }
+    // ✅ Load favorites and visit list when controller initializes
+    // if (authService.isLoggedIn()) {
+    //   fetchFavoritePlaces();
+    //   fetchVisitListPlaces();
+    // }
   }
 
   Future<void> fetchPlaces({
@@ -141,9 +145,13 @@ class HomeController extends GetxController {
           final String? imageUrl = results[0];
           final String? description = results[1];
 
+          // Generate placeId once and store it
+          final placeId = place.placeId ?? generateplaceid(place);
+          
           final enrichedPlace = place.copyWith(
             imageUrl: imageUrl,
             description: description,
+            placeId: placeId,
           );
 
           enrichedList.add(enrichedPlace);
@@ -152,7 +160,9 @@ class HomeController extends GetxController {
           print(
             '❌ Failed to enrich place: ${place.name ?? place.wikidataId}, error: $e',
           );
-          enrichedList.add(place); // Add at least the basic place
+          // Generate placeId for basic place too
+          final placeId = place.placeId ?? generateplaceid(place);
+          enrichedList.add(place.copyWith(placeId: placeId)); // Add at least the basic place
         }
       }
 
@@ -165,11 +175,17 @@ class HomeController extends GetxController {
     }
   }
 
+  // Generate placeId - used when placeId is not already set
   String generateplaceid(PlaceModel place) {
     if (place.wikidataId != null && place.wikidataId!.isNotEmpty) {
       return place.wikidataId!;
     }
     return '${place.name}-${place.latitude}-${place.longitude}';
+  }
+
+  // Get placeId from place, generate if not set
+  String getPlaceId(PlaceModel place) {
+    return place.placeId ?? generateplaceid(place);
   }
 
   // ✅ FIXED: Fetch favorites from Firebase
@@ -241,14 +257,16 @@ class HomeController extends GetxController {
         return;
       }
 
-      final placeId = generateplaceid(place);
-      print('📝 Generated place ID: $placeId');
+      final placeId = getPlaceId(place);
+      print('📝 Using place ID: $placeId');
 
       await userService.addToFavorites(uid, placeId);
       print('✅ Added to Firebase');
 
-      // Refresh favorites list to show the new addition
-      await fetchFavoritePlaces();
+      // Update local list immediately instead of re-fetching
+      if (!favoritePlaces.any((p) => getPlaceId(p) == placeId)) {
+        favoritePlaces.add(place);
+      }
 
       Get.snackbar(
         'Success',
@@ -273,11 +291,11 @@ class HomeController extends GetxController {
       final uid = authService.getCurrentUserId();
       if (uid == null) return;
 
-      final placeId = generateplaceid(place);
+      final placeId = getPlaceId(place);
       await userService.removeFromFavorites(uid, placeId);
 
       // Remove from local list immediately for better UX
-      favoritePlaces.removeWhere((p) => generateplaceid(p) == placeId);
+      favoritePlaces.removeWhere((p) => getPlaceId(p) == placeId);
 
       print('✅ Removed from favorites');
 
@@ -298,8 +316,8 @@ class HomeController extends GetxController {
 
   // ✅ Check if place is in favorites
   bool isFavorite(PlaceModel place) {
-    final placeId = generateplaceid(place);
-    return favoritePlaces.any((p) => generateplaceid(p) == placeId);
+    final placeId = getPlaceId(place);
+    return favoritePlaces.any((p) => getPlaceId(p) == placeId);
   }
 
   // ✅ Parse PlaceModel from stored placeId
@@ -328,12 +346,16 @@ class HomeController extends GetxController {
           description = await wikiService.getSummary(name);
         } catch (_) {}
 
+        // Generate placeId for parsed place
+        final placeId = '$name-$lat-$lng';
+        
         return PlaceModel(
           name: name,
           latitude: lat,
           longitude: lng,
           imageUrl: imageUrl,
           description: description,
+          placeId: placeId,
         );
       }
     }
@@ -353,6 +375,174 @@ class HomeController extends GetxController {
       wikidataId: placeId,
       imageUrl: imageUrl,
       description: description,
+      placeId: placeId, // Use wikidataId as placeId
     );
+  }
+
+  // ✅ Add place to visit list with date/time and schedule notification
+  Future<void> addToVisitListWithDateTime(PlaceModel place, DateTime visitDateTime) async {
+    try {
+      print('➕ Adding to visit list: ${place.name} at $visitDateTime');
+
+      final uid = authService.getCurrentUserId();
+      if (uid == null) {
+        print('❌ User not logged in');
+        Get.snackbar('Login Required', 'Please login to add to visit list');
+        Get.toNamed('/login');
+        return;
+      }
+
+      final placeId = getPlaceId(place);
+      print('📝 Using place ID: $placeId');
+
+      // Add to visit list in Firebase
+      await userService.addToVisitListWithDateTime(uid, placeId, visitDateTime);
+      print('✅ Added to Firebase');
+
+      // Schedule notification 30 minutes before visit time
+      await notificationService.scheduleVisitReminderNotification(
+        placeId: placeId,
+        placeName: place.name ?? 'Unknown Place',
+        visitDateTime: visitDateTime,
+      );
+
+      // Update local list immediately instead of re-fetching
+      if (!visitListPlaces.any((p) => getPlaceId(p) == placeId)) {
+        visitListPlaces.add(place);
+        visitListItemsWithDates[placeId] = visitDateTime;
+      } else {
+        // Update existing entry
+        visitListItemsWithDates[placeId] = visitDateTime;
+      }
+
+      Get.snackbar(
+        'Success',
+        'Added "${place.name}" to visit list\nNotification scheduled for 30 minutes before visit',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 3),
+      );
+    } catch (e) {
+      print('❌ Error adding to visit list: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to add to visit list: $e',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
+  // ✅ Fetch visit list places from Firebase
+  Future<void> fetchVisitListPlaces() async {
+    try {
+      isVisitListLoading.value = true;
+      errorMessage.value = '';
+
+      print('🔍 Starting fetchVisitListPlaces...');
+
+      final uid = authService.getCurrentUserId();
+      if (uid == null) {
+        print('❌ No user logged in');
+        errorMessage.value = 'Please login to view visit list';
+        visitListPlaces.value = [];
+        visitListItemsWithDates.value = {};
+        isVisitListLoading.value = false;
+        return;
+      }
+
+      print('✅ User ID: $uid');
+
+      final user = await userService.getUser(uid);
+
+      if (user == null) {
+        print('❌ User data not found');
+        visitListPlaces.value = [];
+        visitListItemsWithDates.value = {};
+        isVisitListLoading.value = false;
+        return;
+      }
+
+      print('✅ User data loaded');
+      print('📋 Visit list items: ${user.visitListItems}');
+
+      if (user.visitListItems == null || user.visitListItems!.isEmpty) {
+        print('ℹ️ No visit list items found');
+        visitListPlaces.value = [];
+        visitListItemsWithDates.value = {};
+        isVisitListLoading.value = false;
+        return;
+      }
+
+      final List<PlaceModel> loadedPlaces = [];
+      final Map<String, DateTime> datesMap = {};
+
+      for (var entry in user.visitListItems!.entries) {
+        final placeId = entry.key;
+        final visitDateTime = entry.value;
+        
+        print('🔄 Parsing place: $placeId');
+        PlaceModel place = await _parsePlaceFromId(placeId);
+        loadedPlaces.add(place);
+        datesMap[placeId] = visitDateTime;
+        print('✅ Place parsed: ${place.name}');
+      }
+
+      visitListPlaces.value = loadedPlaces;
+      visitListItemsWithDates.value = datesMap;
+      print('🎉 Loaded ${loadedPlaces.length} visit list places');
+    } catch (e) {
+      errorMessage.value = 'Error loading visit list: $e';
+      print('❌ Error in fetchVisitListPlaces: $e');
+    } finally {
+      isVisitListLoading.value = false;
+    }
+  }
+
+  // ✅ Get visit date/time for a place
+  DateTime? getVisitDateTime(PlaceModel place) {
+    final placeId = getPlaceId(place);
+    return visitListItemsWithDates[placeId];
+  }
+
+  // ✅ Check if place is in visit list
+  bool isInVisitList(PlaceModel place) {
+    final placeId = getPlaceId(place);
+    return visitListItemsWithDates.containsKey(placeId);
+  }
+
+  // ✅ Remove place from visit list and cancel notification
+  Future<void> removeFromVisitListWithDateTime(PlaceModel place) async {
+    try {
+      print('➖ Removing from visit list: ${place.name}');
+
+      final uid = authService.getCurrentUserId();
+      if (uid == null) return;
+
+      final placeId = getPlaceId(place);
+      
+      // Remove from Firebase
+      await userService.removeFromVisitList(uid, placeId);
+      
+      // Cancel scheduled notification
+      await notificationService.cancelVisitReminderNotification(placeId);
+
+      // Update local list immediately instead of re-fetching
+      visitListPlaces.removeWhere((p) => getPlaceId(p) == placeId);
+      visitListItemsWithDates.remove(placeId);
+
+      print('✅ Removed from visit list');
+
+      Get.snackbar(
+        'Removed',
+        'Place removed from visit list',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      print('❌ Error removing from visit list: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to remove from visit list: $e',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
   }
 }

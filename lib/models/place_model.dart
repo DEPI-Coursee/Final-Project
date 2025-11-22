@@ -10,6 +10,7 @@ class PlaceModel {
 
   final String? imageUrl;
   final String? description;
+  final String? placeId; // Generated once and stored
 
   PlaceModel({
     this.name,
@@ -23,6 +24,7 @@ class PlaceModel {
 
     this.imageUrl,
     this.description,
+    this.placeId,
   });
 
   factory PlaceModel.fromJson(Map<String, dynamic> json) {
@@ -63,6 +65,7 @@ class PlaceModel {
     String? wikidataId,
     String? country,
     String? category,
+    String? placeId,
   }) {
     return PlaceModel(
       name: name ?? this.name,
@@ -77,6 +80,7 @@ class PlaceModel {
       // Update the fields being fetched later
       imageUrl: imageUrl ?? this.imageUrl,
       description: description ?? this.description,
+      placeId: placeId ?? this.placeId,
     );
   }
 
@@ -92,6 +96,7 @@ class PlaceModel {
       'category': category,
       'imageUrl': imageUrl,
       'description': description,
+      'placeId': placeId,
     };
   }
 }

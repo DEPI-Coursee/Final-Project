@@ -22,9 +22,9 @@ class Authservice {
         fullName: name,
         email: email,
         password: password,
-        // Initialize empty lists for favoritePlaces and visitedPlaces
+        // Initialize empty list for favoritePlaces and empty map for visitListItems
         favoritePlaces: [],
-        visitedPlaces: [],
+        visitListItems: {},
       );
 
       // Save user data to Firestore with empty lists

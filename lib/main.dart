@@ -19,6 +19,7 @@ import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:tour_guide/services/notification_service.dart';
 import 'package:tour_guide/services/user_service.dart';
 import 'package:tour_guide/services/work_manager_service.dart';
+import 'package:tour_guide/middleware/place_details_middleware.dart';
 
 import 'controllers/location_controller.dart';
 
@@ -98,23 +99,10 @@ class MyApp extends StatelessWidget {
         ),
         GetPage(
           name: '/place-details',
-          page: () {
-            final place = Get.arguments as PlaceModel?;
-            if (place == null) {
-              // Return a fallback screen if no place is provided
-              return Scaffold(
-                appBar: AppBar(title: const Text('Error')),
-                body: const Center(
-                  child: Text('Place details not available'),
-                ),
-              );
-            }
-            return PlaceDetails(place: place);
-          },
+          page: () => const PlaceDetails(),
           binding: BindingsBuilder(() {
             Get.lazyPut(() => HomeController());
           }),
-
         ),
         GetPage(
           name: '/favorites',

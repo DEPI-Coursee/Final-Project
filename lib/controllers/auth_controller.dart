@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:tour_guide/services/Authservice.dart';
+import 'package:tour_guide/models/place_model.dart';
 import 'home_controller.dart';
  
 class AuthController extends GetxController {
@@ -53,9 +54,39 @@ class AuthController extends GetxController {
     isSubmitting.value = false;
 
     final signedIn = await authService.signIn(email, password);
-    signedIn
-        ? Get.offAllNamed('/home')
-        : Get.snackbar('error signing in', 'enter a valid email and password', snackPosition: SnackPosition.BOTTOM);
+    if (signedIn) {
+      // Check if there's a return route from arguments
+      final arguments = Get.arguments as Map<String, dynamic>?;
+      if (arguments != null && arguments.containsKey('returnRoute')) {
+        final returnRoute = arguments['returnRoute'] as String;
+        final place = arguments['place'] as PlaceModel?;
+        final action = arguments['action'] as String?;
+        
+        // Navigate back to the return route with the place
+        if (place != null) {
+          // Store pending action in HomeController before navigating
+          try {
+            final homeController = Get.find<HomeController>();
+            if (action != null) {
+              homeController.pendingActionType = action;
+              homeController.pendingPlaceId = homeController.getPlaceId(place);
+            }
+          } catch (e) {
+            print('⚠️ Could not store pending action: $e');
+          }
+          
+          // Navigate back to place details
+          Get.offAllNamed(returnRoute, arguments: place);
+        } else {
+          Get.offAllNamed(returnRoute);
+        }
+      } else {
+        // No return route, go to home
+        Get.offAllNamed('/home');
+      }
+    } else {
+      Get.snackbar('error signing in', 'enter a valid email and password', snackPosition: SnackPosition.BOTTOM);
+    }
   }
 
   Future<void> register() async {
@@ -82,7 +113,35 @@ class AuthController extends GetxController {
       isSubmitting.value = false;
 
       if (success != null) {
-        Get.offAllNamed('/home');
+        // Check if there's a return route from arguments (for registration)
+        final arguments = Get.arguments as Map<String, dynamic>?;
+        if (arguments != null && arguments.containsKey('returnRoute')) {
+          final returnRoute = arguments['returnRoute'] as String;
+          final place = arguments['place'] as PlaceModel?;
+          final action = arguments['action'] as String?;
+          
+          // Navigate back to the return route with the place
+          if (place != null) {
+            // Store pending action in HomeController before navigating
+            try {
+              final homeController = Get.find<HomeController>();
+              if (action != null) {
+                homeController.pendingActionType = action;
+                homeController.pendingPlaceId = homeController.getPlaceId(place);
+              }
+            } catch (e) {
+              print('⚠️ Could not store pending action: $e');
+            }
+            
+            // Navigate back to place details
+            Get.offAllNamed(returnRoute, arguments: place);
+          } else {
+            Get.offAllNamed(returnRoute);
+          }
+        } else {
+          // No return route, go to home
+          Get.offAllNamed('/home');
+        }
       } else {
         Get.snackbar('Registration failed', 'Something went wrong. Please try again.', snackPosition: SnackPosition.BOTTOM);
       }

@@ -160,7 +160,9 @@ class LoginScreen extends GetView<AuthController> {
                           ),
                           TextButton(
                             onPressed: () {
-                              Get.toNamed('/register');
+                              // Pass current arguments to register screen so user can return after registration
+                              final currentArgs = Get.arguments;
+                              Get.toNamed('/register', arguments: currentArgs);
                             }, 
                             child: const Text('Sign up'),
                           ),
