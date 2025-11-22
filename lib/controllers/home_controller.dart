@@ -10,7 +10,7 @@ import '../services/wikipedia_image_service.dart';
 import 'location_controller.dart';
 import '../services/user_service.dart';
 
-class HomeController extends GetxController{
+class HomeController extends GetxController {
   final searchController = TextEditingController();
 
   final WikipediaImageService wikiService = WikipediaImageService();
@@ -50,13 +50,16 @@ class HomeController extends GetxController{
         latitude: currentLocation.latitude,
         longitude: currentLocation.longitude,
       );
+      print(
+      "📍 Current device location: ${location.latitude}, ${location.longitude}",
+    );
     } catch (e) {
       errorMessage.value = e.toString();
       print('Error getting location: $e');
     }
   }
-  
-  void startTimer(){
+
+  void startTimer() {
     Timer.periodic(50.seconds, (timer) async {
       print("hello");
       try {
@@ -98,12 +101,15 @@ class HomeController extends GetxController{
     startTimer();
 
     // ✅ Load favorites when controller initializes
-    if(authService.isLoggedIn()){
+    if (authService.isLoggedIn()) {
       fetchFavoritePlaces();
     }
   }
 
-  Future<void> fetchPlaces({required double longitude, required double latitude}) async {
+  Future<void> fetchPlaces({
+    required double longitude,
+    required double latitude,
+  }) async {
     try {
       isLoading.value = true;
       errorMessage.value = '';
@@ -119,16 +125,21 @@ class HomeController extends GetxController{
       final List<PlaceModel> enrichedList = [];
 
       for (var place in basicList) {
-        if (place.name != null && place.name!.isNotEmpty) {
+        final String? queryId = place.wikidataId ?? place.name;
+
+        if (queryId == null || queryId.isEmpty) {
+          print('⚠️ Skipping place with no name or Wikidata ID');
+          continue; // Skip this place safely
+        }
+
+        try {
           final results = await Future.wait([
-            wikiService.getBestImageUrl(place.name!),
-            wikiService.getSummary(place.name!),
+            wikiService.getBestImageUrl(queryId),
+            wikiService.getSummary(queryId),
           ]);
 
           final String? imageUrl = results[0];
           final String? description = results[1];
-
-          print("DEBUG_TOURI: ${place.name} -> URL: $imageUrl");
 
           final enrichedPlace = place.copyWith(
             imageUrl: imageUrl,
@@ -136,6 +147,12 @@ class HomeController extends GetxController{
           );
 
           enrichedList.add(enrichedPlace);
+          print("✅ Loaded place: ${place.name ?? place.wikidataId}");
+        } catch (e) {
+          print(
+            '❌ Failed to enrich place: ${place.name ?? place.wikidataId}, error: $e',
+          );
+          enrichedList.add(place); // Add at least the basic place
         }
       }
 
@@ -160,9 +177,9 @@ class HomeController extends GetxController{
     try {
       isFavoritesLoading.value = true;
       errorMessage.value = '';
-      
+
       print('🔍 Starting fetchFavoritePlaces...');
-      
+
       final uid = authService.getCurrentUserId();
       if (uid == null) {
         print('❌ No user logged in');
@@ -174,7 +191,7 @@ class HomeController extends GetxController{
       print('✅ User ID: $uid');
 
       final user = await userService.getUser(uid);
-      
+
       if (user == null) {
         print('❌ User data not found');
         favoritePlaces.value = [];
@@ -203,7 +220,6 @@ class HomeController extends GetxController{
 
       favoritePlaces.value = loadedPlaces;
       print('🎉 Loaded ${loadedPlaces.length} favorite places');
-      
     } catch (e) {
       errorMessage.value = 'Error loading favorites: $e';
       print('❌ Error in fetchFavoritePlaces: $e');
@@ -216,7 +232,7 @@ class HomeController extends GetxController{
   Future<void> addToFavorites(PlaceModel place) async {
     try {
       print('➕ Adding to favorites: ${place.name}');
-      
+
       final uid = authService.getCurrentUserId();
       if (uid == null) {
         print('❌ User not logged in');
@@ -227,7 +243,7 @@ class HomeController extends GetxController{
 
       final placeId = generateplaceid(place);
       print('📝 Generated place ID: $placeId');
-      
+
       await userService.addToFavorites(uid, placeId);
       print('✅ Added to Firebase');
 
@@ -253,16 +269,16 @@ class HomeController extends GetxController{
   Future<void> removeFromFavorites(PlaceModel place) async {
     try {
       print('➖ Removing from favorites: ${place.name}');
-      
+
       final uid = authService.getCurrentUserId();
       if (uid == null) return;
 
       final placeId = generateplaceid(place);
       await userService.removeFromFavorites(uid, placeId);
-      
+
       // Remove from local list immediately for better UX
       favoritePlaces.removeWhere((p) => generateplaceid(p) == placeId);
-      
+
       print('✅ Removed from favorites');
 
       Get.snackbar(
@@ -288,27 +304,29 @@ class HomeController extends GetxController{
 
   // ✅ Parse PlaceModel from stored placeId
   Future<PlaceModel> _parsePlaceFromId(String placeId) async {
-    print('🔍 Parsing placeId: $placeId');
-    
+    if (placeId.isEmpty) {
+      throw Exception('Invalid placeId');
+    }
+
     // Check if it's a custom format: "name-lat-lng"
     if (placeId.contains('-') && placeId.split('-').length >= 3) {
       final parts = placeId.split('-');
-
-      // Try to parse last two parts as coordinates
-      final lastPart = parts[parts.length - 1];
+      final lastPart = parts.last;
       final secondLastPart = parts[parts.length - 2];
 
       final lng = double.tryParse(lastPart);
       final lat = double.tryParse(secondLastPart);
 
       if (lat != null && lng != null) {
-        // It's custom format: "name-lat-lng"
         final name = parts.sublist(0, parts.length - 2).join('-');
         print('📍 Parsed as coordinates: $name ($lat, $lng)');
 
-        // Fetch image and description from Wikipedia
-        final imageUrl = await wikiService.getBestImageUrl(name);
-        final description = await wikiService.getSummary(name);
+        String? imageUrl;
+        String? description;
+        try {
+          imageUrl = await wikiService.getBestImageUrl(name);
+          description = await wikiService.getSummary(name);
+        } catch (_) {}
 
         return PlaceModel(
           name: name,
@@ -320,10 +338,15 @@ class HomeController extends GetxController{
       }
     }
 
-    // If it's a wikidataId or couldn't parse, create basic place
-    print('🆔 Parsed as wikidataId: $placeId');
-    final imageUrl = await wikiService.getBestImageUrl(placeId);
-    final description = await wikiService.getSummary(placeId);
+    // Wikidata ID fallback
+    print('🆔 Parsed as Wikidata ID: $placeId');
+
+    String? imageUrl;
+    String? description;
+    try {
+      imageUrl = await wikiService.getBestImageUrl(placeId);
+      description = await wikiService.getSummary(placeId);
+    } catch (_) {}
 
     return PlaceModel(
       name: placeId,

@@ -27,18 +27,23 @@ class PlaceModel {
 
   factory PlaceModel.fromJson(Map<String, dynamic> json) {
     final properties = json['properties'] ?? {};
-    final datasources = properties['datasource'] ?? {};
-    final wikidata = datasources['raw'] ?? {};
 
     return PlaceModel(
       name: properties['name'] as String?,
       addressLine2: properties['address_line2'] as String?,
-      longitude: properties['lon'] as double?,
-      latitude: properties['lat'] as double?,
-      wikipediaUrl: wikidata['wikipedia'] as String?,
-      wikidataId: wikidata['wikidata'] as String?,
+      longitude: (properties['lon'] as num?)?.toDouble(),
+      latitude: (properties['lat'] as num?)?.toDouble(),
+
+      // ✔ THESE ARE THE CORRECT FIELDS FROM GEOAPIFY
+      wikipediaUrl: properties['wikipedia'] as String?, // ex: "en:Cairo_Tower"
+      wikidataId: properties['wikidata'] as String?, // ex: "Q12345"
+
       country: properties['country'] as String?,
-      category: properties['categories']?.first as String?,
+      category: properties['categories'] is List
+          ? (properties['categories'] as List).isNotEmpty
+                ? properties['categories'][0]
+                : null
+          : null,
 
       imageUrl: null,
       description: null,
