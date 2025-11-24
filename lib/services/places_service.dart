@@ -12,7 +12,7 @@ class PlacesService {
 
   final String apiKey = '209b94b8f29c43018eeb659d8ba68684';
 
-  // Static search terms - you can modify these!
+  // Static search terms
   final List<String> staticSearchTerms = [
     'متحف',           // Museum
     'مطعم',           // Restaurant
@@ -21,10 +21,13 @@ class PlacesService {
     'مسجد',           // Mosque
     'كنيسة',          // Church
     'قلعة',           // Castle
-    'سوق',            // Market
+    'سوق',
+    'فندق',
+    'كافيه',
+    'سينما',
+    'مستشفي',
   ];
 
-  /// New method: Get places using Autocomplete API with static search terms
   /// This searches multiple categories and returns combined results
   Future<List<PlaceModel>> getPlaces({
     required String categories, // Kept for backward compatibility but not used
