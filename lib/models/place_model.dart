@@ -30,11 +30,35 @@ class PlaceModel {
   factory PlaceModel.fromJson(Map<String, dynamic> json) {
     final properties = json['properties'] ?? {};
 
+    // Handle both lon/lat and coordinates from geometry
+    double? longitude = (properties['lon'] as num?)?.toDouble();
+    double? latitude = (properties['lat'] as num?)?.toDouble();
+    
+    // Fallback: try geometry coordinates if lon/lat not in properties
+    if (longitude == null || latitude == null) {
+      final geometry = json['geometry'] as Map<String, dynamic>?;
+      final coordinates = geometry?['coordinates'] as List<dynamic>?;
+      if (coordinates != null && coordinates.length >= 2) {
+        longitude = (coordinates[0] as num?)?.toDouble();
+        latitude = (coordinates[1] as num?)?.toDouble();
+      }
+    }
+
+    // Handle address - autocomplete returns formatted, places API returns address_line2
+    String? address = properties['formatted'] as String? ?? 
+                     properties['address_line2'] as String? ??
+                     properties['address_line1'] as String?;
+
+    // Generate place_id from multiple possible sources
+    String? placeId = properties['place_id'] as String? ??
+                     properties['id'] as String? ??
+                     json['id'] as String?;
+
     return PlaceModel(
       name: properties['name'] as String?,
-      addressLine2: properties['address_line2'] as String?,
-      longitude: (properties['lon'] as num?)?.toDouble(),
-      latitude: (properties['lat'] as num?)?.toDouble(),
+      addressLine2: address,
+      longitude: longitude,
+      latitude: latitude,
 
       // ✔ THESE ARE THE CORRECT FIELDS FROM GEOAPIFY
       wikipediaUrl: properties['wikipedia'] as String?, // ex: "en:Cairo_Tower"
@@ -45,10 +69,11 @@ class PlaceModel {
           ? (properties['categories'] as List).isNotEmpty
                 ? properties['categories'][0]
                 : null
-          : null,
+          : properties['category'] as String?, // Autocomplete might use singular
 
       imageUrl: null,
       description: null,
+      placeId: placeId,
     );
   }
 

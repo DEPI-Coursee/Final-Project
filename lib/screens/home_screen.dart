@@ -1,14 +1,9 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
-import 'package:tour_guide/screens/place_details_screen.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:tour_guide/screens/favorits_screen.dart';
 import 'package:tour_guide/screens/visit_list_screen.dart';
 import '../controllers/home_controller.dart';
-import 'package:tour_guide/services/AuthService.dart';
-import 'login_screen.dart';
 
 class HomeScreen extends GetView<HomeController> {
   HomeScreen({super.key});
@@ -116,15 +111,24 @@ class HomeScreen extends GetView<HomeController> {
                   TextField(
                     controller: controller.searchController,
                     decoration: InputDecoration(
-                      hintText: 'Search a place',
+                      hintText: 'Search: museum, restaurant, park...',
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: Theme.of(context).primaryColor,
+                      ),
                       suffixIcon: IconButton(
-                        onPressed: () {},
+                        onPressed: controller.clearSearch,
                         icon: Icon(
-                          Icons.search,
+                          Icons.clear,
                           color: Theme.of(context).primaryColor,
                         ),
+                        tooltip: 'Clear search',
                       ),
                     ),
+                    textInputAction: TextInputAction.search,
+                    onChanged: (value) {
+                      // Debounce is handled in controller
+                    },
                   ),
                 ],
               ),
@@ -216,33 +220,47 @@ class HomeScreen extends GetView<HomeController> {
                                   ),
                                 ),
 
-                                // DYNAMIC IMAGE DISPLAY LOGIC
+                                // 🖼️ CACHED IMAGE DISPLAY (Lazy Loading)
                                 child:
                                     place.imageUrl != null &&
                                         place.imageUrl!.isNotEmpty
                                     ? ClipRRect(
                                         borderRadius: BorderRadius.circular(15),
-                                        child: Image.network(
-                                          place
-                                              .imageUrl!, // Use the fetched image URL
+                                        child: CachedNetworkImage(
+                                          imageUrl: place.imageUrl!,
                                           fit: BoxFit.cover,
                                           width: double.infinity,
                                           height: double.infinity,
-                                          errorBuilder:
-                                              (ctx, error, stackTrace) =>
-                                                  const Icon(
-                                                    Icons.broken_image,
-                                                    size: 48,
-                                                    color: Colors.white70,
-                                                  ),
+                                          placeholder: (context, url) => Container(
+                                            color: Colors.grey.shade800,
+                                            child: const Center(
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                valueColor: AlwaysStoppedAnimation<Color>(
+                                                  Colors.white54,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          errorWidget: (context, url, error) =>
+                                              const Center(
+                                                child: Icon(
+                                                  Icons.broken_image,
+                                                  size: 48,
+                                                  color: Colors.white70,
+                                                ),
+                                              ),
                                         ),
                                       )
-                                    : Center(
-                                        // Fallback if no image URL was found/fetched
-                                        child: Icon(
-                                          Icons.place,
-                                          size: 48,
-                                          color: Colors.white70,
+                                    : Container(
+                                        color: Colors.grey.shade800,
+                                        child: const Center(
+                                          // 📍 Placeholder while image loads
+                                          child: Icon(
+                                            Icons.image,
+                                            size: 48,
+                                            color: Colors.white38,
+                                          ),
                                         ),
                                       ),
                               ),
@@ -294,7 +312,7 @@ class HomeScreen extends GetView<HomeController> {
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
-                                            place.country!,
+                                            place.country ?? 'Egypt',
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodySmall
@@ -314,7 +332,7 @@ class HomeScreen extends GetView<HomeController> {
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
-                                            place.category!,
+                                            place.category ?? 'Place',
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodySmall

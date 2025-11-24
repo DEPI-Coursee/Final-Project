@@ -38,12 +38,18 @@ class HomeController extends GetxController {
   final RxString errorMessage = ''.obs;
 
   // API parameters (configurable)
-  final categories = 'tourism.attraction';
+  final categories = 'tourism.attraction'; // Not used with autocomplete but kept for compatibility
   final radius = 10000.0;
-  final limit = 20;
+  final limit = 10; // Changed to 10 as requested
 
   String? pendingPlaceId;
   String? pendingActionType;
+
+  // 🚀 FIFO Queue for Lazy Loading Images
+  final List<PlaceModel> _imageQueue = [];
+  bool _isProcessingQueue = false;
+  Timer? _searchDebounceTimer; // For debouncing search input (350ms)
+  // Note: Processing one image at a time (concurrency=1) - hardcoded in while loop
 
   Future<void> getlocation() async {
     try {
@@ -103,6 +109,9 @@ class HomeController extends GetxController {
     getlocation();
     startTimer();
 
+    // ✅ Setup search listener with debounce
+    searchController.addListener(_onSearchChanged);
+
     // ✅ Load favorites and visit list when controller initializes
     // if (authService.isLoggedIn()) {
     //   fetchFavoritePlaces();
@@ -110,6 +119,85 @@ class HomeController extends GetxController {
     // }
   }
 
+  @override
+  void onClose() {
+    _searchDebounceTimer?.cancel();
+    searchController.removeListener(_onSearchChanged);
+    searchController.dispose();
+    super.onClose();
+  }
+
+  /// 🔍 Handle search input changes with 350ms debounce
+  void _onSearchChanged() {
+    _searchDebounceTimer?.cancel();
+    _searchDebounceTimer = Timer(const Duration(milliseconds: 350), () {
+      final query = searchController.text.trim();
+      if (query.isNotEmpty) {
+        _performCustomSearch(query);
+      }
+    });
+  }
+
+  /// 🔎 Perform custom search with user input
+  Future<void> _performCustomSearch(String searchText) async {
+    if (location == null) {
+      print('⚠️ No location available for search');
+      return;
+    }
+
+    try {
+      isLoading.value = true;
+      errorMessage.value = '';
+
+      print('🔍 Searching for: "$searchText"');
+
+      // Use the custom search method from PlacesService
+      final List<PlaceModel> searchResults = await placesService.searchCustomTerm(
+        searchText: searchText,
+        longitude: location!.longitude,
+        latitude: location!.latitude,
+        limit: limit,
+      );
+
+      // Show results immediately without images
+      final List<PlaceModel> quickList = [];
+      for (var place in searchResults) {
+        if (place.name == null || place.name!.isEmpty) {
+          continue;
+        }
+        final placeId = place.placeId ?? generateplaceid(place);
+        quickList.add(place.copyWith(placeId: placeId));
+      }
+
+      places.value = quickList;
+      print('✅ Found ${quickList.length} results for "$searchText"');
+
+      // Add to image queue and process
+      _imageQueue.clear();
+      _imageQueue.addAll(quickList);
+      _processImageQueue();
+
+    } catch (e) {
+      errorMessage.value = 'Search failed: $e';
+      print('❌ Search error: $e');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /// 🔄 Clear search and reload default places
+  void clearSearch() {
+    searchController.clear();
+    if (location != null) {
+      fetchPlaces(
+        longitude: location!.longitude,
+        latitude: location!.latitude,
+      );
+    }
+  }
+
+  /// 🚀 Fetch places with lazy image loading (FIFO queue)
+  /// Shows places immediately without images, then loads images in background
   Future<void> fetchPlaces({
     required double longitude,
     required double latitude,
@@ -118,6 +206,7 @@ class HomeController extends GetxController {
       isLoading.value = true;
       errorMessage.value = '';
 
+      // 1️⃣ Fetch places from API
       final List<PlaceModel> basicList = await placesService.getPlaces(
         categories: categories,
         longitude: longitude,
@@ -126,52 +215,147 @@ class HomeController extends GetxController {
         limit: limit,
       );
 
-      final List<PlaceModel> enrichedList = [];
-
+      // 2️⃣ Show places IMMEDIATELY without images
+      final List<PlaceModel> quickList = [];
       for (var place in basicList) {
-        final String? queryId = place.wikidataId ?? place.name;
-
-        if (queryId == null || queryId.isEmpty) {
-          print('⚠️ Skipping place with no name or Wikidata ID');
-          continue; // Skip this place safely
+        if (place.name == null || place.name!.isEmpty) {
+          print('⚠️ Skipping place with no name');
+          continue;
         }
 
-        try {
-          final results = await Future.wait([
-            wikiService.getBestImageUrl(queryId),
-            wikiService.getSummary(queryId),
-          ]);
-
-          final String? imageUrl = results[0];
-          final String? description = results[1];
-
-          // Generate placeId once and store it
-          final placeId = place.placeId ?? generateplaceid(place);
-          
-          final enrichedPlace = place.copyWith(
-            imageUrl: imageUrl,
-            description: description,
-            placeId: placeId,
-          );
-
-          enrichedList.add(enrichedPlace);
-          print("✅ Loaded place: ${place.name ?? place.wikidataId}");
-        } catch (e) {
-          print(
-            '❌ Failed to enrich place: ${place.name ?? place.wikidataId}, error: $e',
-          );
-          // Generate placeId for basic place too
-          final placeId = place.placeId ?? generateplaceid(place);
-          enrichedList.add(place.copyWith(placeId: placeId)); // Add at least the basic place
-        }
+        // Generate placeId
+        final placeId = place.placeId ?? generateplaceid(place);
+        final quickPlace = place.copyWith(placeId: placeId);
+        quickList.add(quickPlace);
       }
 
-      places.value = enrichedList;
+      // Update UI immediately with places (no images yet)
+      places.value = quickList;
+      print('✅ Showing ${quickList.length} places (images loading in background)');
+
+      // 3️⃣ Clear old queue and add new places to image queue
+      _imageQueue.clear();
+      _imageQueue.addAll(quickList);
+
+      // 4️⃣ Start processing queue in background
+      _processImageQueue();
+
     } catch (e) {
       errorMessage.value = e.toString();
+      print('❌ Error fetching places: $e');
       Get.snackbar('Error', errorMessage.value);
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  /// 🎯 Process image queue in background (FIFO - First In First Out)
+  /// Loads images one by one with delay between items
+  void _processImageQueue() async {
+    if (_isProcessingQueue) {
+      print('⚠️ Queue already processing, skipping...');
+      return;
+    }
+
+    _isProcessingQueue = true;
+    print('🚀 Starting image queue processing (${_imageQueue.length} items)');
+
+    while (_imageQueue.isNotEmpty) {
+      // Take first item from queue (FIFO)
+      final place = _imageQueue.removeAt(0);
+
+      // Skip if already has image
+      if (place.imageUrl != null && place.imageUrl!.isNotEmpty) {
+        print('⏭️ Skipping ${place.name} - already has image');
+        continue;
+      }
+
+      try {
+        print('📸 Fetching image for: ${place.name}');
+        await _fetchImageForPlace(place);
+      } catch (e) {
+        print('❌ Failed to fetch image for ${place.name}: $e');
+        // Continue with next item even if this one fails
+      }
+
+      // 🕐 Delay between items (250ms) to avoid overwhelming APIs
+      await Future.delayed(const Duration(milliseconds: 250));
+    }
+
+    _isProcessingQueue = false;
+    print('✅ Image queue processing complete');
+  }
+
+  /// 📸 Fetch image and description for a single place
+  /// Updates the place in the list automatically (reactive)
+  Future<void> _fetchImageForPlace(PlaceModel place) async {
+    try {
+      // Query using wikidata ID or name
+      final String? queryId = place.wikidataId ?? place.name;
+
+      if (queryId == null || queryId.isEmpty) {
+        print('⚠️ No query ID for place');
+        return;
+      }
+
+      // Fetch image and description in parallel
+      final results = await Future.wait([
+        wikiService.getBestImageUrl(queryId),
+        wikiService.getSummary(queryId),
+      ]);
+
+      final String? imageUrl = results[0];
+      final String? description = results[1];
+
+      // Find place in list and update it
+      final index = places.indexWhere((p) => p.placeId == place.placeId);
+      if (index != -1) {
+        // Create updated place with image and description
+        final updatedPlace = places[index].copyWith(
+          imageUrl: imageUrl,
+          description: description,
+        );
+
+        // Update in list (GetX will automatically update UI)
+        places[index] = updatedPlace;
+        print('✅ Updated ${place.name} with image');
+      }
+    } catch (e) {
+      print('❌ Error fetching image for ${place.name}: $e');
+      // Don't throw - let queue continue
+    }
+  }
+
+  /// 🔄 Manual image fetch for a specific place (used in place details)
+  /// Fetches immediately with loading indicator
+  Future<void> fetchImageForPlaceImmediate(PlaceModel place) async {
+    if (place.imageUrl != null && place.description != null) {
+      // Already has data
+      return;
+    }
+
+    try {
+      final String? queryId = place.wikidataId ?? place.name;
+      if (queryId == null || queryId.isEmpty) return;
+
+      final results = await Future.wait([
+        wikiService.getBestImageUrl(queryId),
+        wikiService.getSummary(queryId),
+      ]);
+
+      final String? imageUrl = results[0];
+      final String? description = results[1];
+
+      // Update in list
+      final index = places.indexWhere((p) => p.placeId == place.placeId);
+      if (index != -1) {
+        places[index] = places[index].copyWith(
+          imageUrl: imageUrl,
+          description: description,
+        );
+      }
+    } catch (e) {
+      print('❌ Error in immediate fetch: $e');
     }
   }
 

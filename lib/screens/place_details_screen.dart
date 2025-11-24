@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:tour_guide/controllers/home_controller.dart';
 import 'package:tour_guide/models/place_model.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -42,7 +43,28 @@ class _PlaceDetailsState extends State<PlaceDetails> {
     // Check if we just returned from login and need to execute an action
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAndExecutePendingAction();
+      // 📸 Fetch image immediately if missing
+      _fetchImageIfNeeded();
     });
+  }
+
+  /// 📸 Fetch image and description immediately if not available
+  void _fetchImageIfNeeded() async {
+    final currentPlace = place;
+    if (currentPlace == null) return;
+    
+    if (currentPlace.imageUrl == null || currentPlace.description == null) {
+      final homeController = Get.find<HomeController>();
+      await homeController.fetchImageForPlaceImmediate(currentPlace);
+      // Update local place reference
+      if (mounted) {
+        setState(() {
+          place = homeController.places.firstWhereOrNull(
+            (p) => p.placeId == currentPlace.placeId
+          ) ?? currentPlace;
+        });
+      }
+    }
   }
 
   void _checkAndExecutePendingAction() {
@@ -107,19 +129,28 @@ class _PlaceDetailsState extends State<PlaceDetails> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Image Section
+              // 🖼️ Image Section (Cached)
               ClipRRect(
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
                 ),
                 child: place!.imageUrl != null && place!.imageUrl!.isNotEmpty
-                    ? Image.network(
-                        place!.imageUrl!,
+                    ? CachedNetworkImage(
+                        imageUrl: place!.imageUrl!,
                         height: 200,
                         width: double.infinity,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Container(
+                        placeholder: (context, url) => Container(
+                          height: 200,
+                          color: Colors.grey.shade700,
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white54),
+                            ),
+                          ),
+                        ),
+                        errorWidget: (context, url, error) => Container(
                           height: 200,
                           color: Colors.grey.shade600,
                           child: const Center(
