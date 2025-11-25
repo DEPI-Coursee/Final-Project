@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
+import 'package:tour_guide/controllers/connection_controller.dart';
 import 'package:tour_guide/services/Authservice.dart';
 
 import '../models/place_model.dart';
@@ -201,7 +202,18 @@ class HomeController extends GetxController {
   Future<void> fetchPlaces({
     required double longitude,
     required double latitude,
-  }) async {
+  }) 
+  
+  
+  async {
+    final connectionController = Get.find<ConnectionController>();
+
+  // ✅ 1. If there's no internet, DON'T fetch and DON'T show errors
+  final bool hasInternet = await connectionController.hasInternet();
+  if (!hasInternet) {
+    isLoading.value = false;
+    return;
+  }
     try {
       isLoading.value = true;
       errorMessage.value = '';

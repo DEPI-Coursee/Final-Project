@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:tour_guide/controllers/connection_controller.dart';
 import 'package:tour_guide/screens/favorits_screen.dart';
 import 'package:tour_guide/screens/visit_list_screen.dart';
 import '../controllers/home_controller.dart';
@@ -135,6 +136,19 @@ class HomeScreen extends GetView<HomeController> {
             ),
             Expanded(
               child: Obx(() {
+
+                final connectionController = Get.find<ConnectionController>();
+
+// ✅ If no internet -> show Offline Places button
+if (!connectionController.isConnected.value) {
+  return Center(
+    child: ElevatedButton(
+      onPressed: () => Get.toNamed('/offline_page'),
+      child: const Text("View Offline Places"),
+    ),
+  );
+}
+
                 // Show loading indicator
                 if (controller.isLoading.value) {
                   return const Center(child: CircularProgressIndicator());

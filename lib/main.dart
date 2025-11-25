@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:tour_guide/bindings/AppBinding.dart';
+import 'package:tour_guide/controllers/connection_controller.dart';
+import 'package:tour_guide/internet_middleware.dart';
 import 'package:tour_guide/screens/getStrated_screen.dart';
 import 'package:tour_guide/screens/home_screen.dart';
+import 'package:tour_guide/screens/offline_details.dart';
 import 'package:tour_guide/screens/splash_screen.dart';
 import 'package:tour_guide/screens/login_screen.dart';
 import 'package:tour_guide/screens/register_screen.dart';
@@ -25,6 +28,7 @@ import 'controllers/location_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  Get.put(ConnectionController(), permanent: true);
 
   // NotificationService notificationService = NotificationService();
   // await notificationService.initialize();
@@ -69,6 +73,11 @@ class MyApp extends StatelessWidget {
       initialBinding: AppBinding(),
       getPages: [
         GetPage(
+    name: '/offline-places',
+    page: () => const OfflinePlacesScreen(),
+  ),
+
+        GetPage(
           name: '/splash',
           page: () => const SplashScreen(),
         ),
@@ -82,6 +91,7 @@ class MyApp extends StatelessWidget {
           binding: BindingsBuilder(() {
             Get.lazyPut(() => AuthController());
           }),
+
         ),
         GetPage(
           name: '/register',
@@ -96,6 +106,7 @@ class MyApp extends StatelessWidget {
           binding: BindingsBuilder(() {
             Get.lazyPut(() => HomeController());
           }),
+            middlewares: [InternetMiddleware()],
         ),
         GetPage(
           name: '/place-details',
@@ -103,6 +114,7 @@ class MyApp extends StatelessWidget {
           binding: BindingsBuilder(() {
             Get.lazyPut(() => HomeController());
           }),
+            middlewares: [InternetMiddleware()],
         ),
         GetPage(
           name: '/favorites',

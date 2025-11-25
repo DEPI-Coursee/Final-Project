@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:tour_guide/controllers/connection_controller.dart';
 import 'package:tour_guide/controllers/home_controller.dart';
 import 'package:tour_guide/services/Authservice.dart';
 import '../controllers/location_controller.dart';
@@ -12,6 +13,7 @@ class AppBinding extends Bindings {
     Get.lazyPut<Authservice>(() => Authservice(), fenix: true);
     Get.lazyPut<LocationController>(() => LocationController(), fenix: true);
     Get.lazyPut<UserService>(() => UserService(), fenix: true);
+    Get.lazyPut<ConnectionController>(() => ConnectionController(), fenix: true);
 
 
     // Get.put(LocationController(), permanent: true);
