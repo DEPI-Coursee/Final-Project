@@ -14,13 +14,13 @@ class PlacesService {
 
   // Static search terms
   final List<String> staticSearchTerms = [
-    'متحف', // Museum
-    'مطعم', // Restaurant
-    'حديقة', // Park
-    'معلم سياحي', // Tourist attraction
-    'مسجد', // Mosque
-    'كنيسة', // Church
-    'قلعة', // Castle
+    'متحف',           // Museum
+    'مطعم',           // Restaurant
+    'حديقة',          // Park
+    'معلم سياحي',     // Tourist attraction
+    'مسجد',           // Mosque
+    'كنيسة',          // Church
+    'قلعة',           // Castle
     'سوق',
     'فندق',
     'كافيه',
@@ -28,34 +28,33 @@ class PlacesService {
     'مستشفي',
   ];
 
-  /// Fetch a batch of places for lazy loading
+  /// This searches multiple categories and returns combined results
   Future<List<PlaceModel>> getPlaces({
-    required String categories, // kept for backward compatibility
+    required String categories, // Kept for backward compatibility but not used
     required double longitude,
     required double latitude,
-    required double radius,
+    required double radius, // Not used in autocomplete, proximity bias instead
     int limit = 10,
-    int offset = 0,
   }) async {
     try {
       List<PlaceModel> allPlaces = [];
-
-      // Pick one search term per batch based on offset
-      final termIndex = offset ~/ limit % staticSearchTerms.length;
-      final searchTerm = staticSearchTerms[termIndex];
-
-      print('📡 Fetching $limit places for "$searchTerm" (offset: $offset)');
-
-      final places = await _searchAutocomplete(
-        searchText: searchTerm,
-        longitude: longitude,
-        latitude: latitude,
-        limit: limit,
-        offset: offset % limit,
-      );
-
-      allPlaces.addAll(places);
-
+      
+      // Search for each static term
+      for (String searchTerm in staticSearchTerms) {
+        try {
+          final places = await _searchAutocomplete(
+            searchText: searchTerm,
+            longitude: longitude,
+            latitude: latitude,
+            limit: limit,
+          );
+          allPlaces.addAll(places);
+        } catch (e) {
+          print('⚠️ Error searching for "$searchTerm": $e');
+          // Continue with other search terms even if one fails
+        }
+      }
+      
       // Remove duplicates based on place_id
       final uniquePlaces = <String, PlaceModel>{};
       for (var place in allPlaces) {
@@ -64,10 +63,10 @@ class PlacesService {
           uniquePlaces[id] = place;
         }
       }
-
-      print('✅ Found ${uniquePlaces.length} unique places for "$searchTerm"');
-
+      
+      print('✅ Found ${uniquePlaces.length} unique places from ${staticSearchTerms.length} categories');
       return uniquePlaces.values.toList();
+      
     } catch (e) {
       print('❌ Error in getPlaces: $e');
       throw Exception('Error fetching places: $e');
@@ -80,7 +79,6 @@ class PlacesService {
     required double longitude,
     required double latitude,
     int limit = 10,
-    int offset = 0,
   }) async {
     try {
       final queryParams = {
@@ -88,13 +86,10 @@ class PlacesService {
         'filter': 'countrycode:eg',
         'bias': 'proximity:$longitude,$latitude',
         'limit': limit,
-        'offset': offset,
         'apiKey': apiKey,
       };
 
-      print(
-        '📡 Searching autocomplete: "$searchText" near ($longitude, $latitude)',
-      );
+      print('📡 Searching autocomplete: "$searchText" near ($longitude, $latitude)');
 
       final response = await _dio.get(
         '/geocode/autocomplete',
@@ -104,6 +99,7 @@ class PlacesService {
       if (response.statusCode == 200) {
         final features = response.data['features'] as List? ?? [];
         print('✅ Found ${features.length} results for "$searchText"');
+        
         return features.map((json) => PlaceModel.fromJson(json)).toList();
       } else {
         throw Exception(

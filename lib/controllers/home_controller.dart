@@ -25,15 +25,11 @@ class HomeController extends GetxController {
   late List<PlaceModel> myplaces;
   Position? location;
 
-  double get currentLatitude => location?.latitude ?? 0.0;
-  double get currentLongitude => location?.longitude ?? 0.0;
-
   final RxList<PlaceModel> favoritePlaces = <PlaceModel>[].obs;
   final RxBool isFavoritesLoading = false.obs;
 
   final RxList<PlaceModel> visitListPlaces = <PlaceModel>[].obs;
-  final RxMap<String, DateTime> visitListItemsWithDates =
-      <String, DateTime>{}.obs;
+  final RxMap<String, DateTime> visitListItemsWithDates = <String, DateTime>{}.obs;
   final RxBool isVisitListLoading = false.obs;
 
   // Observable variables
@@ -42,14 +38,9 @@ class HomeController extends GetxController {
   final RxString errorMessage = ''.obs;
 
   // API parameters (configurable)
-  final categories =
-      'tourism.attraction'; // Not used with autocomplete but kept for compatibility
+  final categories = 'tourism.attraction'; // Not used with autocomplete but kept for compatibility
   final radius = 10000.0;
   final limit = 10; // Changed to 10 as requested
-
-  int _offset = 0;
-  final int _pageSize = 10; // same as your limit
-  bool _hasMorePlaces = true;
 
   String? pendingPlaceId;
   String? pendingActionType;
@@ -69,8 +60,8 @@ class HomeController extends GetxController {
         longitude: currentLocation.longitude,
       );
       print(
-        "📍 Current device location: ${currentLocation.latitude}, ${currentLocation.longitude}",
-      );
+      "📍 Current device location: ${currentLocation.latitude}, ${currentLocation.longitude}",
+    );
     } catch (e) {
       errorMessage.value = e.toString();
       print('Error getting location: $e');
@@ -94,12 +85,12 @@ class HomeController extends GetxController {
         }
 
         final distance = locationController.calculateDistance(
-          currentLocation.latitude,
-          currentLocation.longitude,
-          newLocation.latitude,
+          currentLocation.latitude, 
+          currentLocation.longitude, 
+          newLocation.latitude, 
           newLocation.longitude,
         );
-        if (distance >= 200) {
+        if(distance >= 200){
           location = newLocation;
           await fetchPlaces(
             latitude: newLocation.latitude,
@@ -161,13 +152,12 @@ class HomeController extends GetxController {
       print('🔍 Searching for: "$searchText"');
 
       // Use the custom search method from PlacesService
-      final List<PlaceModel> searchResults = await placesService
-          .searchCustomTerm(
-            searchText: searchText,
-            longitude: location!.longitude,
-            latitude: location!.latitude,
-            limit: limit,
-          );
+      final List<PlaceModel> searchResults = await placesService.searchCustomTerm(
+        searchText: searchText,
+        longitude: location!.longitude,
+        latitude: location!.latitude,
+        limit: limit,
+      );
 
       // Show results immediately without images
       final List<PlaceModel> quickList = [];
@@ -186,6 +176,7 @@ class HomeController extends GetxController {
       _imageQueue.clear();
       _imageQueue.addAll(quickList);
       _processImageQueue();
+
     } catch (e) {
       errorMessage.value = 'Search failed: $e';
       print('❌ Search error: $e');
@@ -198,7 +189,10 @@ class HomeController extends GetxController {
   void clearSearch() {
     searchController.clear();
     if (location != null) {
-      fetchPlaces(longitude: location!.longitude, latitude: location!.latitude);
+      fetchPlaces(
+        longitude: location!.longitude,
+        latitude: location!.latitude,
+      );
     }
   }
 
@@ -207,16 +201,7 @@ class HomeController extends GetxController {
   Future<void> fetchPlaces({
     required double longitude,
     required double latitude,
-    bool loadMore = false,
   }) async {
-    if (!loadMore) {
-      _offset = 0;
-      _hasMorePlaces = true;
-      places.clear();
-      _imageQueue.clear();
-    } else if (!_hasMorePlaces) {
-      return; // nothing more to fetch
-    }
     try {
       isLoading.value = true;
       errorMessage.value = '';
@@ -227,14 +212,8 @@ class HomeController extends GetxController {
         longitude: longitude,
         latitude: latitude,
         radius: radius,
-        limit: _pageSize,
-        offset: _offset,
+        limit: limit,
       );
-
-      if (basicList.isEmpty) {
-        _hasMorePlaces = false;
-        return;
-      }
 
       // 2️⃣ Show places IMMEDIATELY without images
       final List<PlaceModel> quickList = [];
@@ -251,20 +230,16 @@ class HomeController extends GetxController {
       }
 
       // Update UI immediately with places (no images yet)
-      //places.value = quickList;
-      places.addAll(quickList);
-      print(
-        '✅ Showing ${quickList.length} places (images loading in background)',
-      );
+      places.value = quickList;
+      print('✅ Showing ${quickList.length} places (images loading in background)');
 
       // 3️⃣ Clear old queue and add new places to image queue
-      //_imageQueue.clear();
+      _imageQueue.clear();
       _imageQueue.addAll(quickList);
 
       // 4️⃣ Start processing queue in background
       _processImageQueue();
 
-      _offset += _pageSize;
     } catch (e) {
       errorMessage.value = e.toString();
       print('❌ Error fetching places: $e');
@@ -557,7 +532,7 @@ class HomeController extends GetxController {
 
         // Generate placeId for parsed place
         final placeId = '$name-$lat-$lng';
-
+        
         return PlaceModel(
           name: name,
           latitude: lat,
@@ -589,10 +564,7 @@ class HomeController extends GetxController {
   }
 
   // ✅ Add place to visit list with date/time and schedule notification
-  Future<void> addToVisitListWithDateTime(
-    PlaceModel place,
-    DateTime visitDateTime,
-  ) async {
+  Future<void> addToVisitListWithDateTime(PlaceModel place, DateTime visitDateTime) async {
     try {
       print('➕ Adding to visit list: ${place.name} at $visitDateTime');
 
@@ -690,7 +662,7 @@ class HomeController extends GetxController {
       for (var entry in user.visitListItems!.entries) {
         final placeId = entry.key;
         final visitDateTime = entry.value;
-
+        
         print('🔄 Parsing place: $placeId');
         PlaceModel place = await _parsePlaceFromId(placeId);
         loadedPlaces.add(place);
@@ -730,10 +702,10 @@ class HomeController extends GetxController {
       if (uid == null) return;
 
       final placeId = getPlaceId(place);
-
+      
       // Remove from Firebase
       await userService.removeFromVisitList(uid, placeId);
-
+      
       // Cancel scheduled notification
       await notificationService.cancelVisitReminderNotification(placeId);
 

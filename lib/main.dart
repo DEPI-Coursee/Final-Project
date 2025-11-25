@@ -40,6 +40,7 @@ void main() async {
   await workManager.initialize();
   workManager.registerVisitListTask();
 
+
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
@@ -49,6 +50,7 @@ void main() async {
     // Handle initialization error gracefully
     print("Error initializing Firebase: $e");
   }
+
 
   runApp(const MyApp());
 }
@@ -66,8 +68,14 @@ class MyApp extends StatelessWidget {
       // Register LocationController as app-wide service (permanent)
       initialBinding: AppBinding(),
       getPages: [
-        GetPage(name: '/splash', page: () => const SplashScreen()),
-        GetPage(name: '/get-started', page: () => const GetStartedScreen()),
+        GetPage(
+          name: '/splash',
+          page: () => const SplashScreen(),
+        ),
+        GetPage(
+          name: '/get-started',
+          page: () => const GetStartedScreen(),
+        ),
         GetPage(
           name: '/login',
           page: () => LoginScreen(),
