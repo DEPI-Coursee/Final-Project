@@ -1,3 +1,4 @@
+
 class PlaceModel {
   final String? name;
   final String? addressLine2;
@@ -7,10 +8,10 @@ class PlaceModel {
   final String? wikidataId;
   final String? country;
   final String? category;
-
+  final String? type;
   final String? imageUrl;
   final String? description;
-  final String? placeId; // Generated once and stored
+  final String? placeId;
 
   PlaceModel({
     this.name,
@@ -21,7 +22,7 @@ class PlaceModel {
     this.wikidataId,
     this.country,
     this.category,
-
+    this.type,
     this.imageUrl,
     this.description,
     this.placeId,
@@ -30,11 +31,9 @@ class PlaceModel {
   factory PlaceModel.fromJson(Map<String, dynamic> json) {
     final properties = json['properties'] ?? {};
 
-    // Handle both lon/lat and coordinates from geometry
     double? longitude = (properties['lon'] as num?)?.toDouble();
     double? latitude = (properties['lat'] as num?)?.toDouble();
-    
-    // Fallback: try geometry coordinates if lon/lat not in properties
+
     if (longitude == null || latitude == null) {
       final geometry = json['geometry'] as Map<String, dynamic>?;
       final coordinates = geometry?['coordinates'] as List<dynamic>?;
@@ -44,41 +43,33 @@ class PlaceModel {
       }
     }
 
-    // Handle address - autocomplete returns formatted, places API returns address_line2
-    String? address = properties['formatted'] as String? ?? 
-                     properties['address_line2'] as String? ??
-                     properties['address_line1'] as String?;
+    String? address = properties['formatted'] as String? ??
+        properties['address_line2'] as String? ??
+        properties['address_line1'] as String?;
 
-    // Generate place_id from multiple possible sources
     String? placeId = properties['place_id'] as String? ??
-                     properties['id'] as String? ??
-                     json['id'] as String?;
+        properties['id'] as String? ??
+        json['id'] as String?;
 
     return PlaceModel(
       name: properties['name'] as String?,
       addressLine2: address,
       longitude: longitude,
       latitude: latitude,
-
-      // ✔ THESE ARE THE CORRECT FIELDS FROM GEOAPIFY
-      wikipediaUrl: properties['wikipedia'] as String?, // ex: "en:Cairo_Tower"
-      wikidataId: properties['wikidata'] as String?, // ex: "Q12345"
-
+      wikipediaUrl: properties['wikipedia'] as String?,
+      wikidataId: properties['wikidata'] as String?,
       country: properties['country'] as String?,
       category: properties['categories'] is List
           ? (properties['categories'] as List).isNotEmpty
-                ? properties['categories'][0]
-                : null
-          : properties['category'] as String?, // Autocomplete might use singular
-
+          ? properties['categories'][0]
+          : null
+          : properties['category'] as String?,
       imageUrl: null,
       description: null,
       placeId: placeId,
     );
   }
 
-  // 🔑 Crucial method: Allows you to create a new model instance
-  // with updated fields (like image/description) while keeping the old data.
   PlaceModel copyWith({
     String? imageUrl,
     String? description,
@@ -90,6 +81,7 @@ class PlaceModel {
     String? wikidataId,
     String? country,
     String? category,
+    String? type,
     String? placeId,
   }) {
     return PlaceModel(
@@ -101,8 +93,7 @@ class PlaceModel {
       wikidataId: wikidataId ?? this.wikidataId,
       country: country ?? this.country,
       category: category ?? this.category,
-
-      // Update the fields being fetched later
+      type: type ?? this.type,
       imageUrl: imageUrl ?? this.imageUrl,
       description: description ?? this.description,
       placeId: placeId ?? this.placeId,
@@ -119,6 +110,7 @@ class PlaceModel {
       'wikidataId': wikidataId,
       'country': country,
       'category': category,
+      'type': type,
       'imageUrl': imageUrl,
       'description': description,
       'placeId': placeId,

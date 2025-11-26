@@ -28,34 +28,56 @@ class PlacesService {
     'مستشفي',
   ];
 
+  final Map<String, String> placeTypeTranslations = {
+    'متحف': 'Museum',
+    'مطعم': 'Restaurant',
+    'حديقة': 'Park',
+    'معلم سياحي': 'Tourist Attraction',
+    'مسجد': 'Mosque',
+    'كنيسة': 'Church',
+    'قلعة': 'Castle',
+    'سوق': 'Market',
+    'فندق': 'Hotel',
+    'كافيه': 'Cafe',
+    'سينما': 'Cinema',
+    'مستشفي': 'Hospital',
+  };
+
   /// This searches multiple categories and returns combined results
   Future<List<PlaceModel>> getPlaces({
-    required String categories, // Kept for backward compatibility but not used
+    required String categories,
     required double longitude,
     required double latitude,
-    required double radius, // Not used in autocomplete, proximity bias instead
+    required double radius,
     int limit = 10,
   }) async {
     try {
       List<PlaceModel> allPlaces = [];
-      
+
       // Search for each static term
       for (String searchTerm in staticSearchTerms) {
         try {
+          // >>>> ADDED LINE: حفظ النوع الإنجليزي حسب الترجمة
+          final englishType = placeTypeTranslations[searchTerm] ?? 'Unknown';
+          // <<<< END ADDED LINE
+
           final places = await _searchAutocomplete(
             searchText: searchTerm,
             longitude: longitude,
             latitude: latitude,
             limit: limit,
           );
-          allPlaces.addAll(places);
+
+          // >>>> ADDED LINE: إضافة الـ type لكل نتيجة
+          final updatedPlaces = places.map((p) => p.copyWith(type: englishType)).toList();
+          allPlaces.addAll(updatedPlaces);
+          // <<<< END ADDED LINE
+
         } catch (e) {
           print('⚠️ Error searching for "$searchTerm": $e');
-          // Continue with other search terms even if one fails
         }
       }
-      
-      // Remove duplicates based on place_id
+
       final uniquePlaces = <String, PlaceModel>{};
       for (var place in allPlaces) {
         final id = place.placeId ?? '${place.latitude}_${place.longitude}';
@@ -63,10 +85,10 @@ class PlacesService {
           uniquePlaces[id] = place;
         }
       }
-      
+
       print('✅ Found ${uniquePlaces.length} unique places from ${staticSearchTerms.length} categories');
       return uniquePlaces.values.toList();
-      
+
     } catch (e) {
       print('❌ Error in getPlaces: $e');
       throw Exception('Error fetching places: $e');
@@ -99,7 +121,7 @@ class PlacesService {
       if (response.statusCode == 200) {
         final features = response.data['features'] as List? ?? [];
         print('✅ Found ${features.length} results for "$searchText"');
-        
+
         return features.map((json) => PlaceModel.fromJson(json)).toList();
       } else {
         throw Exception(
@@ -120,7 +142,6 @@ class PlacesService {
     }
   }
 
-  /// Public method to search with a custom search term (if needed)
   Future<List<PlaceModel>> searchCustomTerm({
     required String searchText,
     required double longitude,

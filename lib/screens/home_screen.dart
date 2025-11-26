@@ -130,6 +130,58 @@ class HomeScreen extends GetView<HomeController> {
                       // Debounce is handled in controller
                     },
                   ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 50,
+                    child: Obx(() {
+                      // Access the observable at the start to establish proper reactivity
+                      final selectedIndex = controller.selected.value;
+                      final categories = controller.placeType;
+
+                      return ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: categories.length,
+                        itemBuilder: (context, index) {
+                          return GestureDetector(
+                            onTap: () {
+                              controller.selected.value = index;
+                              controller.filterPlacesByType(controller.placeType[index]);
+                              for (var value1 in controller.CopyPlaces) {
+                                print(value1.imageUrl);
+
+                                    }
+
+                            },
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 8),
+                              decoration: BoxDecoration(
+                                color: selectedIndex == index
+                                    ? Theme.of(context).primaryColor
+                                    : const Color(0xFF273E65),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 5,
+                                horizontal: 20,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  categories[index],
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    color: selectedIndex == index
+                                        ? Colors.white
+                                        : Colors.white60,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    }),
+                  )
+
                 ],
               ),
             ),

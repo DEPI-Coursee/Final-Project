@@ -34,8 +34,40 @@ class HomeController extends GetxController {
 
   // Observable variables
   final RxList<PlaceModel> places = <PlaceModel>[].obs;
+  final  CopyPlaces  = <PlaceModel>[];
   final RxBool isLoading = false.obs;
   final RxString errorMessage = ''.obs;
+
+  final  placeType =  [
+    'All',
+    'Museum',
+    'Restaurant',
+    'Park',
+    'Tourist Attraction',
+    'Mosque',
+    'Church',
+    'Castle',
+    'Market',
+    'Hotel',
+    'Cafe',
+    'Cinema',
+    'Hospital',
+  ];
+  final selected = 0.obs;
+
+  void filterPlacesByType(String type) {
+    if (type == "All") {
+      places.value = List.from(CopyPlaces);
+      return;
+    }
+
+    final filtered = CopyPlaces.where((place) {
+      return place.type != null &&
+          place.type!.toLowerCase() == type.toLowerCase();
+    }).toList();
+
+    places.value = filtered;
+  }
 
   // API parameters (configurable)
   final categories = 'tourism.attraction'; // Not used with autocomplete but kept for compatibility
@@ -85,9 +117,9 @@ class HomeController extends GetxController {
         }
 
         final distance = locationController.calculateDistance(
-          currentLocation.latitude, 
-          currentLocation.longitude, 
-          newLocation.latitude, 
+          currentLocation.latitude,
+          currentLocation.longitude,
+          newLocation.latitude,
           newLocation.longitude,
         );
         if(distance >= 200){
@@ -158,6 +190,8 @@ class HomeController extends GetxController {
         latitude: location!.latitude,
         limit: limit,
       );
+      final englishType = placesService.placeTypeTranslations[searchText] ?? null;
+
 
       // Show results immediately without images
       final List<PlaceModel> quickList = [];
@@ -166,15 +200,16 @@ class HomeController extends GetxController {
           continue;
         }
         final placeId = place.placeId ?? generateplaceid(place);
-        quickList.add(place.copyWith(placeId: placeId));
+        quickList.add(place.copyWith(placeId: placeId,type: englishType));
       }
 
-      places.value = quickList;
+      places.addAll(quickList);
+      CopyPlaces.addAll(quickList);
       print('✅ Found ${quickList.length} results for "$searchText"');
 
       // Add to image queue and process
       _imageQueue.clear();
-      _imageQueue.addAll(quickList);
+      _imageQueue.assignAll(quickList);
       _processImageQueue();
 
     } catch (e) {
@@ -231,6 +266,8 @@ class HomeController extends GetxController {
 
       // Update UI immediately with places (no images yet)
       places.value = quickList;
+      CopyPlaces.clear();
+      CopyPlaces.addAll(quickList);
       print('✅ Showing ${quickList.length} places (images loading in background)');
 
       // 3️⃣ Clear old queue and add new places to image queue
@@ -532,7 +569,7 @@ class HomeController extends GetxController {
 
         // Generate placeId for parsed place
         final placeId = '$name-$lat-$lng';
-        
+
         return PlaceModel(
           name: name,
           latitude: lat,
@@ -662,7 +699,7 @@ class HomeController extends GetxController {
       for (var entry in user.visitListItems!.entries) {
         final placeId = entry.key;
         final visitDateTime = entry.value;
-        
+
         print('🔄 Parsing place: $placeId');
         PlaceModel place = await _parsePlaceFromId(placeId);
         loadedPlaces.add(place);
@@ -702,10 +739,10 @@ class HomeController extends GetxController {
       if (uid == null) return;
 
       final placeId = getPlaceId(place);
-      
+
       // Remove from Firebase
       await userService.removeFromVisitList(uid, placeId);
-      
+
       // Cancel scheduled notification
       await notificationService.cancelVisitReminderNotification(placeId);
 
