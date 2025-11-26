@@ -36,13 +36,51 @@ class HomeController extends GetxController {
 
   // Observable variables
   final RxList<PlaceModel> places = <PlaceModel>[].obs;
+  final  CopyPlaces  = <PlaceModel>[];
   final RxBool isLoading = false.obs;
   final RxString errorMessage = ''.obs;
 
+  final  placeType =  [
+    'All',
+    'Museum',
+    'Restaurant',
+    'Park',
+    'Tourist Attraction',
+    'Mosque',
+    'Church',
+    'Castle',
+    'Market',
+    'Hotel',
+    'Cafe',
+    'Cinema',
+    'Hospital',
+  ];
+  final selected = 0.obs;
+
+  void filterPlacesByType(String type) {
+    if (type == "All") {
+      places.value = List.from(CopyPlaces);
+      return;
+    }
+
+    final filtered = CopyPlaces.where((place) {
+      return place.type != null &&
+          place.type!.toLowerCase() == type.toLowerCase();
+    }).toList();
+
+    places.value = filtered;
+  }
+
   // API parameters (configurable)
+<<<<<<< HEAD
   final categories = 'tourism.attraction';
   final radius = 10000.0;
   final limit = 10;
+=======
+  final categories = 'tourism.attraction'; // Not used with autocomplete but kept for compatibility
+  final radius = 10000.0;
+  final limit = 10; // Changed to 10 as requested
+>>>>>>> f4c16511503e607d031ff38cab2837afc1e92efb
 
   String? pendingPlaceId;
   String? pendingActionType;
@@ -80,8 +118,8 @@ class HomeController extends GetxController {
       );
       
       print(
-        "📍 Current device location: ${currentLocation.latitude}, ${currentLocation.longitude}",
-      );
+      "📍 Current device location: ${currentLocation.latitude}, ${currentLocation.longitude}",
+    );
     } catch (e) {
       print('❌ Error getting location: $e');
 
@@ -143,8 +181,12 @@ class HomeController extends GetxController {
           newLocation.latitude, 
           newLocation.longitude,
         );
+<<<<<<< HEAD
         
         if (distance >= 200) {
+=======
+        if(distance >= 200){
+>>>>>>> f4c16511503e607d031ff38cab2837afc1e92efb
           location = newLocation;
           await fetchPlaces(
             latitude: newLocation.latitude,
@@ -273,12 +315,21 @@ class HomeController extends GetxController {
 
       print('🔍 Searching for: "$searchText"');
 
+<<<<<<< HEAD
+=======
+      // Use the custom search method from PlacesService
+>>>>>>> f4c16511503e607d031ff38cab2837afc1e92efb
       final List<PlaceModel> searchResults = await placesService.searchCustomTerm(
         searchText: searchText,
         longitude: location!.longitude,
         latitude: location!.latitude,
         limit: limit,
       );
+<<<<<<< HEAD
+=======
+      final englishType = placesService.placeTypeTranslations[searchText] ?? null;
+
+>>>>>>> f4c16511503e607d031ff38cab2837afc1e92efb
 
       final List<PlaceModel> quickList = [];
       for (var place in searchResults) {
@@ -286,14 +337,15 @@ class HomeController extends GetxController {
           continue;
         }
         final placeId = place.placeId ?? generateplaceid(place);
-        quickList.add(place.copyWith(placeId: placeId));
+        quickList.add(place.copyWith(placeId: placeId,type: englishType));
       }
 
-      places.value = quickList;
+      places.addAll(quickList);
+      CopyPlaces.addAll(quickList);
       print('✅ Found ${quickList.length} results for "$searchText"');
 
       _imageQueue.clear();
-      _imageQueue.addAll(quickList);
+      _imageQueue.assignAll(quickList);
       _processImageQueue();
 
     } catch (e) {
@@ -352,6 +404,10 @@ class HomeController extends GetxController {
         limit: limit,
       );
 
+<<<<<<< HEAD
+=======
+      // 2️⃣ Show places IMMEDIATELY without images
+>>>>>>> f4c16511503e607d031ff38cab2837afc1e92efb
       final List<PlaceModel> quickList = [];
       for (var place in basicList) {
         if (place.name == null || place.name!.isEmpty) {
@@ -364,9 +420,19 @@ class HomeController extends GetxController {
         quickList.add(quickPlace);
       }
 
+<<<<<<< HEAD
       places.value = quickList;
       print('✅ Showing ${quickList.length} places (images loading in background)');
 
+=======
+      // Update UI immediately with places (no images yet)
+      places.value = quickList;
+      CopyPlaces.clear();
+      CopyPlaces.addAll(quickList);
+      print('✅ Showing ${quickList.length} places (images loading in background)');
+
+      // 3️⃣ Clear old queue and add new places to image queue
+>>>>>>> f4c16511503e607d031ff38cab2837afc1e92efb
       _imageQueue.clear();
       _imageQueue.addAll(quickList);
       _processImageQueue();
@@ -686,6 +752,10 @@ class HomeController extends GetxController {
     );
   }
 
+<<<<<<< HEAD
+=======
+  // ✅ Add place to visit list with date/time and schedule notification
+>>>>>>> f4c16511503e607d031ff38cab2837afc1e92efb
   Future<void> addToVisitListWithDateTime(PlaceModel place, DateTime visitDateTime) async {
     try {
       print('➕ Adding to visit list: ${place.name} at $visitDateTime');

@@ -27,7 +27,11 @@ android {
         applicationId = "com.example.tour_guide"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
+<<<<<<< HEAD
         minSdk =  23                       
+=======
+        minSdk = 23
+>>>>>>> f4c16511503e607d031ff38cab2837afc1e92efb
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
