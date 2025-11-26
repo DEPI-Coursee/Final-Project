@@ -43,11 +43,7 @@ void main() async {
   await workManager.initialize();
   workManager.registerVisitListTask();
 
-<<<<<<< HEAD
   // Initialize Firebase
-=======
-
->>>>>>> f4c16511503e607d031ff38cab2837afc1e92efb
   try {
     print('🔥 Initializing Firebase...');
     await Firebase.initializeApp(
@@ -58,11 +54,7 @@ void main() async {
     print('❌ Error initializing Firebase: $e');
   }
 
-<<<<<<< HEAD
   print('✅ All services initialized');
-=======
-
->>>>>>> f4c16511503e607d031ff38cab2837afc1e92efb
   runApp(const MyApp());
 }
 
@@ -77,14 +69,11 @@ class MyApp extends StatelessWidget {
       initialRoute: '/splash',
       initialBinding: AppBinding(),
       getPages: [
-<<<<<<< HEAD
         // ✅ Offline page should have NO middleware
         GetPage(
           name: '/offline-page',
           page: () => const OfflinePlacesScreen(),
         ),
-=======
->>>>>>> f4c16511503e607d031ff38cab2837afc1e92efb
         GetPage(
           name: '/splash',
           page: () => const SplashScreen(),
