@@ -48,10 +48,8 @@ dependencies:
   workmanager: ^0.9.0+3
   http: ^1.2.0
   cached_network_image: ^3.3.1
-<<<<<<< HEAD
   connectivity_plus: ^7.0.0
-=======
->>>>>>> f4c16511503e607d031ff38cab2837afc1e92efb
+
 
 dev_dependencies:
   flutter_test:

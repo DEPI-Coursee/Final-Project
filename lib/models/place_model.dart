@@ -13,6 +13,7 @@ class PlaceModel {
   final String? description;
   final String? placeId;
 
+
   PlaceModel({
     this.name,
     this.addressLine2,

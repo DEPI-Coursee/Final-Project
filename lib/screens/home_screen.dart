@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:tour_guide/models/place_model.dart';
 import 'package:tour_guide/screens/favorits_screen.dart';
 import 'package:tour_guide/screens/visit_list_screen.dart';
 import '../controllers/home_controller.dart';
@@ -132,6 +133,54 @@ class HomeScreen extends StatelessWidget {
                     onChanged: (value) {
                       // Debounce is handled in controller
                     },
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 50,
+                    child: Obx(() {
+                      // Access the observable at the start to establish proper reactivity
+                      final selectedIndex = controller.selected.value;
+                      final categories = controller.placeType;
+
+                      return ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: categories.length,
+                        itemBuilder: (context, index) {
+                          return GestureDetector(
+                            onTap: () {
+                              controller.selected.value = index;
+                              controller.filterPlacesByType();
+for(PlaceModel v in controller.allPlaces ){ print(v.type);}
+
+                            },
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 8),
+                              decoration: BoxDecoration(
+                                color: selectedIndex == index
+                                    ? Theme.of(context).primaryColor
+                                    : const Color(0xFF273E65),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 5,
+                                horizontal: 20,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  categories[index],
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    color: selectedIndex == index
+                                        ? Colors.white
+                                        : Colors.white60,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    }),
                   ),
                 ],
               ),

@@ -51,16 +51,53 @@ class HomeController extends GetxController {
   final List<PlaceModel> _imageQueue = [];
   bool _isProcessingQueue = false;
   Timer? _searchDebounceTimer;
-  
+
   // ✅ Add connection listener
   StreamSubscription? _connectionSubscription;
+
+  final RxList<PlaceModel> allPlaces = <PlaceModel>[].obs;
+  final  placeType =  [
+    'All',
+    'Museum',
+    'Restaurant',
+    'Park',
+    'Tourist Attraction',
+    'Mosque',
+    'Church',
+    'Castle',
+    'Market',
+    'Hotel',
+    'Cafe',
+    'Cinema',
+    'Hospital',
+  ];
+  final selected = 0.obs;
+  // ⭐⭐⭐ FIRST METHOD BELOW VARIABLES ⭐⭐⭐
+  void filterPlacesByType() {
+    final String selectedType = placeType[selected.value];
+
+    // All → reset the original list
+    if (selectedType == 'All') {
+      places.value = allPlaces;
+      return;
+    }
+
+    // Filter based on place.type
+    places.value = allPlaces.where((place) {
+      return (place.type ?? '').toLowerCase() ==
+          selectedType.toLowerCase();
+    }).toList();
+  }
+
+
+
 
   Future<void> getlocation() async {
     try {
       // ✅ Check internet FIRST
       final connectionController = Get.find<ConnectionController>();
       final bool hasInternet = await connectionController.hasInternet();
-      
+
       if (!hasInternet) {
         print('🌐 No internet connection - redirecting to offline page');
         errorMessage.value = '';
@@ -70,15 +107,15 @@ class HomeController extends GetxController {
       }
 
       isLoading.value = true;
-      
+
       final currentLocation = await locationController.determinePosition();
       location = currentLocation;
-      
+
       await fetchPlaces(
         latitude: currentLocation.latitude,
         longitude: currentLocation.longitude,
       );
-      
+
       print(
         "📍 Current device location: ${currentLocation.latitude}, ${currentLocation.longitude}",
       );
@@ -97,7 +134,7 @@ class HomeController extends GetxController {
       // On mobile/native, still differentiate network vs other errors
       final connectionController = Get.find<ConnectionController>();
       final bool hasInternet = await connectionController.hasInternet();
-      
+
       if (!hasInternet) {
         print('🌐 Network error detected - redirecting to offline page');
         errorMessage.value = '';
@@ -113,18 +150,18 @@ class HomeController extends GetxController {
   void startTimer() {
     Timer.periodic(50.seconds, (timer) async {
       print("⏰ Timer check triggered");
-      
+
       try {
         // ✅ Check internet first in timer
         final connectionController = Get.find<ConnectionController>();
         final bool hasInternet = await connectionController.hasInternet();
-        
+
         if (!hasInternet) {
           print('🌐 Timer: No internet - redirecting to offline page');
           Get.offAllNamed('/offline-page');
           return;
         }
-        
+
         final currentLocation = location;
         final newLocation = await locationController.determinePosition();
 
@@ -138,12 +175,12 @@ class HomeController extends GetxController {
         }
 
         final distance = locationController.calculateDistance(
-          currentLocation.latitude, 
-          currentLocation.longitude, 
-          newLocation.latitude, 
+          currentLocation.latitude,
+          currentLocation.longitude,
+          newLocation.latitude,
           newLocation.longitude,
         );
-        
+
         if (distance >= 200) {
           location = newLocation;
           await fetchPlaces(
@@ -153,10 +190,10 @@ class HomeController extends GetxController {
         }
       } catch (e) {
         print('❌ Error while updating location in timer: $e');
-        
+
         final connectionController = Get.find<ConnectionController>();
         final bool hasInternet = await connectionController.hasInternet();
-        
+
         if (!hasInternet) {
           Get.offAllNamed('/offline-page');
         }
@@ -167,13 +204,13 @@ class HomeController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    
+
     // ✅ Listen to real-time connection changes
     _listenToConnectionChanges();
-    
+
     // ✅ Check connection and initialize
     _checkConnectionAndInitialize();
-    
+
     // ✅ Setup search listener with debounce
     searchController.addListener(_onSearchChanged);
   }
@@ -181,11 +218,11 @@ class HomeController extends GetxController {
   /// ✅ NEW: Listen to connection changes in real-time
   void _listenToConnectionChanges() {
     final connectionController = Get.find<ConnectionController>();
-    
+
     // Listen to the isConnected observable
     ever(connectionController.isConnected, (bool isConnected) {
       print('🔄 Connection status changed: $isConnected');
-      
+
       if (!isConnected) {
         print('❌ Lost connection - redirecting to offline page');
         // Only redirect if we're not already on offline page
@@ -204,18 +241,18 @@ class HomeController extends GetxController {
   Future<void> _checkConnectionAndInitialize() async {
     try {
       final connectionController = Get.find<ConnectionController>();
-      
+
       // Wait a bit for the initial connection check to complete
       await Future.delayed(const Duration(milliseconds: 500));
-      
+
       final bool hasInternet = await connectionController.hasInternet();
-      
+
       if (!hasInternet) {
         print('🌐 onInit: No internet - redirecting to offline page');
         Get.offAllNamed('/offline-page');
         return;
       }
-      
+
       // Only proceed if we have internet
       await getlocation();
       startTimer();
@@ -223,7 +260,7 @@ class HomeController extends GetxController {
       print('❌ Error in initialization: $e');
       final connectionController = Get.find<ConnectionController>();
       final bool hasInternet = await connectionController.hasInternet();
-      
+
       if (!hasInternet) {
         Get.offAllNamed('/offline-page');
       }
@@ -261,13 +298,13 @@ class HomeController extends GetxController {
       // ✅ Check internet before search
       final connectionController = Get.find<ConnectionController>();
       final bool hasInternet = await connectionController.hasInternet();
-      
+
       if (!hasInternet) {
         print('🌐 Search: No internet - redirecting to offline page');
         Get.offAllNamed('/offline-page');
         return;
       }
-      
+
       isLoading.value = true;
       errorMessage.value = '';
 
@@ -290,6 +327,7 @@ class HomeController extends GetxController {
       }
 
       places.value = quickList;
+      allPlaces.value = quickList;
       print('✅ Found ${quickList.length} results for "$searchText"');
 
       _imageQueue.clear();
@@ -298,10 +336,10 @@ class HomeController extends GetxController {
 
     } catch (e) {
       print('❌ Search error: $e');
-      
+
       final connectionController = Get.find<ConnectionController>();
       final bool hasInternet = await connectionController.hasInternet();
-      
+
       if (!hasInternet) {
         Get.offAllNamed('/offline-page');
       } else {
@@ -332,7 +370,7 @@ class HomeController extends GetxController {
       // ✅ Check internet FIRST
       final connectionController = Get.find<ConnectionController>();
       final bool hasInternet = await connectionController.hasInternet();
-      
+
       if (!hasInternet) {
         isLoading.value = false;
         errorMessage.value = '';
@@ -365,6 +403,8 @@ class HomeController extends GetxController {
       }
 
       places.value = quickList;
+      allPlaces.value = quickList;
+
       print('✅ Showing ${quickList.length} places (images loading in background)');
 
       _imageQueue.clear();
@@ -656,7 +696,7 @@ class HomeController extends GetxController {
         } catch (_) {}
 
         final placeId = '$name-$lat-$lng';
-        
+
         return PlaceModel(
           name: name,
           latitude: lat,
@@ -779,7 +819,7 @@ class HomeController extends GetxController {
       for (var entry in user.visitListItems!.entries) {
         final placeId = entry.key;
         final visitDateTime = entry.value;
-        
+
         print('🔄 Parsing place: $placeId');
         PlaceModel place = await _parsePlaceFromId(placeId);
         loadedPlaces.add(place);
@@ -816,7 +856,7 @@ class HomeController extends GetxController {
       if (uid == null) return;
 
       final placeId = getPlaceId(place);
-      
+
       await userService.removeFromVisitList(uid, placeId);
       await notificationService.cancelVisitReminderNotification(placeId);
 
