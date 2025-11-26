@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:tour_guide/controllers/connection_controller.dart';
 import 'package:tour_guide/screens/favorits_screen.dart';
 import 'package:tour_guide/screens/visit_list_screen.dart';
 import '../controllers/home_controller.dart';
 
-class HomeScreen extends GetView<HomeController> {
+class HomeScreen extends StatelessWidget {
   HomeScreen({super.key});
+
+  // ✅ Use the globally registered HomeController
+  final HomeController controller = Get.find<HomeController>();
 
   @override
   Widget build(BuildContext context) {
@@ -136,25 +138,12 @@ class HomeScreen extends GetView<HomeController> {
             ),
             Expanded(
               child: Obx(() {
-
-                final connectionController = Get.find<ConnectionController>();
-
-// ✅ If no internet -> show Offline Places button
-if (!connectionController.isConnected.value) {
-  return Center(
-    child: ElevatedButton(
-      onPressed: () => Get.toNamed('/offline_page'),
-      child: const Text("View Offline Places"),
-    ),
-  );
-}
-
                 // Show loading indicator
                 if (controller.isLoading.value) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                // Show error message
+                // Show error message (only for non-network errors)
                 if (controller.errorMessage.value.isNotEmpty) {
                   return Center(
                     child: Column(
@@ -213,7 +202,6 @@ if (!connectionController.isConnected.value) {
                     final place = controller.places[index];
                     return InkWell(
                       onTap: () {
-                        // Navigate to place details with the place as argument
                         Get.toNamed('/place-details', arguments: place);
                       },
                       child: Padding(
@@ -223,8 +211,8 @@ if (!connectionController.isConnected.value) {
                             Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: Container(
-                                width: 120, // Adjusted width
-                                height: 100, // Adjusted height
+                                width: 120,
+                                height: 100,
                                 decoration: BoxDecoration(
                                   color: Theme.of(context).cardColor,
                                   borderRadius: BorderRadius.circular(16),
@@ -233,10 +221,7 @@ if (!connectionController.isConnected.value) {
                                     width: 1,
                                   ),
                                 ),
-
-                                // 🖼️ CACHED IMAGE DISPLAY (Lazy Loading)
-                                child:
-                                    place.imageUrl != null &&
+                                child: place.imageUrl != null &&
                                         place.imageUrl!.isNotEmpty
                                     ? ClipRRect(
                                         borderRadius: BorderRadius.circular(15),
@@ -245,12 +230,14 @@ if (!connectionController.isConnected.value) {
                                           fit: BoxFit.cover,
                                           width: double.infinity,
                                           height: double.infinity,
-                                          placeholder: (context, url) => Container(
+                                          placeholder: (context, url) =>
+                                              Container(
                                             color: Colors.grey.shade800,
-                                            child: const Center(
+                                            child: Center(
                                               child: CircularProgressIndicator(
                                                 strokeWidth: 2,
-                                                valueColor: AlwaysStoppedAnimation<Color>(
+                                                valueColor:
+                                                    AlwaysStoppedAnimation<Color>(
                                                   Colors.white54,
                                                 ),
                                               ),
@@ -258,18 +245,17 @@ if (!connectionController.isConnected.value) {
                                           ),
                                           errorWidget: (context, url, error) =>
                                               const Center(
-                                                child: Icon(
-                                                  Icons.broken_image,
-                                                  size: 48,
-                                                  color: Colors.white70,
-                                                ),
-                                              ),
+                                            child: Icon(
+                                              Icons.broken_image,
+                                              size: 48,
+                                              color: Colors.white70,
+                                            ),
+                                          ),
                                         ),
                                       )
                                     : Container(
                                         color: Colors.grey.shade800,
                                         child: const Center(
-                                          // 📍 Placeholder while image loads
                                           child: Icon(
                                             Icons.image,
                                             size: 48,
@@ -299,19 +285,15 @@ if (!connectionController.isConnected.value) {
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                     const SizedBox(height: 6),
-
-                                    // DYNAMIC DESCRIPTION: Display the enriched description
                                     Text(
                                       place.description ??
                                           place.addressLine2 ??
                                           'No description available.',
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodyMedium,
+                                      style:
+                                          Theme.of(context).textTheme.bodyMedium,
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                     ),
-
                                     const SizedBox(height: 6),
                                     if (place.country != null ||
                                         place.category != null)
@@ -320,9 +302,8 @@ if (!connectionController.isConnected.value) {
                                           Icon(
                                             Icons.location_on,
                                             size: 14,
-                                            color: Theme.of(
-                                              context,
-                                            ).primaryColor,
+                                            color:
+                                                Theme.of(context).primaryColor,
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
@@ -331,18 +312,16 @@ if (!connectionController.isConnected.value) {
                                                 .textTheme
                                                 .bodySmall
                                                 ?.copyWith(
-                                                  color: Theme.of(
-                                                    context,
-                                                  ).primaryColor,
+                                                  color: Theme.of(context)
+                                                      .primaryColor,
                                                 ),
                                           ),
-                                          SizedBox(width: 10),
+                                          const SizedBox(width: 10),
                                           Icon(
                                             Icons.category,
                                             size: 14,
-                                            color: Theme.of(
-                                              context,
-                                            ).primaryColor,
+                                            color:
+                                                Theme.of(context).primaryColor,
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
@@ -351,9 +330,8 @@ if (!connectionController.isConnected.value) {
                                                 .textTheme
                                                 .bodySmall
                                                 ?.copyWith(
-                                                  color: Theme.of(
-                                                    context,
-                                                  ).primaryColor,
+                                                  color: Theme.of(context)
+                                                      .primaryColor,
                                                 ),
                                           ),
                                         ],

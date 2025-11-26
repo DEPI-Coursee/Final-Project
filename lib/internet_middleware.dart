@@ -8,18 +8,33 @@ class InternetMiddleware extends GetMiddleware {
 
   @override
   RouteSettings? redirect(String? route) {
-    final connectionController = Get.find<ConnectionController>();
+    print('🔍 Middleware checking connection for route: $route');
     
-    // Check connectivity asynchronously
-    connectionController.hasInternet().then((hasInternet) {
-      if (!hasInternet) {
-        // Redirect to offline page
-        Get.offAllNamed('/offline-places');
+    try {
+      final connectionController = Get.find<ConnectionController>();
+      
+      // ✅ Check current connection status synchronously
+      final isConnected = connectionController.isConnected.value;
+      
+      print('📊 Current connection status: $isConnected');
+      
+      if (!isConnected) {
+        print('❌ No connection - redirecting to offline page');
+        return const RouteSettings(name: '/offline-page');
       }
-    });
-    
-    // Return null to allow navigation to continue
-    // (will be interrupted by Get.offAllNamed if offline)
-    return null;
+      
+      print('✅ Connection OK - allowing navigation to $route');
+      return null;
+    } catch (e) {
+      print('⚠️ Error in middleware: $e');
+      // If we can't check connection, assume offline for safety
+      return const RouteSettings(name: '/offline-page');
+    }
+  }
+
+  @override
+  GetPage? onPageCalled(GetPage? page) {
+    print('📄 Page called: ${page?.name}');
+    return super.onPageCalled(page);
   }
 }

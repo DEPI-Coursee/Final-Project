@@ -5,6 +5,7 @@ import 'package:tour_guide/controllers/connection_controller.dart';
 import 'package:tour_guide/internet_middleware.dart';
 import 'package:tour_guide/screens/getStrated_screen.dart';
 import 'package:tour_guide/screens/home_screen.dart';
+import 'package:tour_guide/controllers/home_controller.dart';
 import 'package:tour_guide/screens/offline_details.dart';
 import 'package:tour_guide/screens/splash_screen.dart';
 import 'package:tour_guide/screens/login_screen.dart';
@@ -14,48 +15,46 @@ import 'package:tour_guide/screens/favorits_screen.dart';
 import 'package:tour_guide/screens/visit_list_screen.dart';
 import 'package:tour_guide/firebaseoptions.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:tour_guide/controllers/home_controller.dart';
 import 'package:tour_guide/controllers/auth_controller.dart';
-import 'package:tour_guide/models/place_model.dart';
-import 'package:tour_guide/services/Authservice.dart';
-import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:tour_guide/services/notification_service.dart';
-import 'package:tour_guide/services/user_service.dart';
 import 'package:tour_guide/services/work_manager_service.dart';
-import 'package:tour_guide/middleware/place_details_middleware.dart';
-
-import 'controllers/location_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  print('🚀 App starting...');
+  
+  // ✅ Initialize ConnectionController FIRST as permanent
+  print('🌐 Initializing ConnectionController...');
   Get.put(ConnectionController(), permanent: true);
-
-  // NotificationService notificationService = NotificationService();
-  // await notificationService.initialize();
+  
+  // Initialize notifications
+  print('🔔 Initializing notifications...');
   await NotificationService().initialize();
-  // Defer notification permission request to avoid conflict with location permission
-  // Request it after a short delay to let location permission request complete first
+  
+  // Defer notification permission request
   Future.delayed(const Duration(seconds: 50), () {
     NotificationService().takePermission();
   });
-  // await WorkManagerService().initialize();
-  // WorkManagerService().registerVisitListTask();
+  
+  // Initialize WorkManager
+  print('⏰ Initializing WorkManager...');
   final workManager = WorkManagerService();
   await workManager.initialize();
   workManager.registerVisitListTask();
 
-
+  // Initialize Firebase
   try {
+    print('🔥 Initializing Firebase...');
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    print("Firebase initialized successfully.");
+    print('✅ Firebase initialized successfully');
   } catch (e) {
-    // Handle initialization error gracefully
-    print("Error initializing Firebase: $e");
+    print('❌ Error initializing Firebase: $e');
   }
 
-
+  print('✅ All services initialized');
   runApp(const MyApp());
 }
 
@@ -67,16 +66,14 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Tour Guide App',
-      // Routes configuration
       initialRoute: '/splash',
-      // Register LocationController as app-wide service (permanent)
       initialBinding: AppBinding(),
       getPages: [
+        // ✅ Offline page should have NO middleware
         GetPage(
-    name: '/offline-places',
-    page: () => const OfflinePlacesScreen(),
-  ),
-
+          name: '/offline-page',
+          page: () => const OfflinePlacesScreen(),
+        ),
         GetPage(
           name: '/splash',
           page: () => const SplashScreen(),
@@ -91,7 +88,6 @@ class MyApp extends StatelessWidget {
           binding: BindingsBuilder(() {
             Get.lazyPut(() => AuthController());
           }),
-
         ),
         GetPage(
           name: '/register',
@@ -100,48 +96,56 @@ class MyApp extends StatelessWidget {
             Get.lazyPut(() => AuthController());
           }),
         ),
+        // ✅ Home page WITH middleware and page-level HomeController binding
         GetPage(
           name: '/home',
           page: () => HomeScreen(),
           binding: BindingsBuilder(() {
-            Get.lazyPut(() => HomeController());
+            if (!Get.isRegistered<HomeController>()) {
+              Get.put(HomeController(), permanent: true);
+            }
           }),
-            middlewares: [InternetMiddleware()],
+          middlewares: [InternetMiddleware()],
         ),
         GetPage(
           name: '/place-details',
           page: () => const PlaceDetails(),
           binding: BindingsBuilder(() {
-            Get.lazyPut(() => HomeController());
+            if (!Get.isRegistered<HomeController>()) {
+              Get.put(HomeController(), permanent: true);
+            }
           }),
-            middlewares: [InternetMiddleware()],
+          middlewares: [InternetMiddleware()],
         ),
         GetPage(
           name: '/favorites',
           page: () => FavoritesScreen(),
           binding: BindingsBuilder(() {
-            Get.lazyPut(() => HomeController());
+            if (!Get.isRegistered<HomeController>()) {
+              Get.put(HomeController(), permanent: true);
+            }
           }),
         ),
         GetPage(
           name: '/visit-list',
           page: () => VisitListScreen(),
           binding: BindingsBuilder(() {
-            Get.lazyPut(() => HomeController());
+            if (!Get.isRegistered<HomeController>()) {
+              Get.put(HomeController(), permanent: true);
+            }
           }),
         ),
       ],
       theme: ThemeData(
-        // Dark blue color scheme
         primarySwatch: Colors.blue,
-        primaryColor: const Color(0xFF1B3377), // Dark blue
-        scaffoldBackgroundColor: const Color(0xFF0C1323), // Very dark blue
+        primaryColor: const Color(0xFF1B3377),
+        scaffoldBackgroundColor: const Color(0xFF0C1323),
         appBarTheme: const AppBarTheme(
           backgroundColor: Color(0xFF84AAF6),
           foregroundColor: Colors.white,
           elevation: 0,
         ),
-        cardColor: const Color(0xFF1E293B), // Dark blue-gray
+        cardColor: const Color(0xFF1E293B),
         dividerColor: const Color(0xFF334155),
         textTheme: const TextTheme(
           headlineLarge: TextStyle(color: Colors.white),

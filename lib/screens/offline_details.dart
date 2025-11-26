@@ -1,4 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:tour_guide/controllers/connection_controller.dart';
 import '../models/offline_places_model.dart';
 
 // ✅ Offline places data
@@ -59,6 +62,25 @@ class OfflinePlacesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ On native platforms we can safely auto-redirect when internet returns.
+    // On web this caused an infinite loop due to devtools/offline behavior,
+    // so we only enable this logic when not running on web.
+    if (!kIsWeb) {
+      final connectionController = Get.find<ConnectionController>();
+
+      Future.microtask(() async {
+        try {
+          final hasInternet = await connectionController.hasInternet();
+          if (hasInternet && Get.currentRoute == '/offline-page') {
+            print('🌐 Connection restored on offline page - going back to /home');
+            Get.offAllNamed('/home');
+          }
+        } catch (_) {
+          // If anything goes wrong here, just stay on offline page.
+        }
+      });
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -178,17 +200,50 @@ class OfflinePlacesScreen extends StatelessWidget {
         },
       ),
 
-      // Offline banner
-      bottomNavigationBar: Container(
+      // Offline banner + manual "Retry" button
+      bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(12),
-        color: Theme.of(context).primaryColor.withOpacity(0.15),
-        child: Text(
-          "You're offline — showing saved places",
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).primaryColor,
-          ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                "You're offline — showing saved places",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).primaryColor,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () async {
+                  final connectionController = Get.find<ConnectionController>();
+                  final hasInternet = await connectionController.hasInternet();
+                  if (hasInternet) {
+                    print('🌐 Retry from offline page: internet available, going to /home');
+                    Get.offAllNamed('/home');
+                  } else {
+                    Get.snackbar(
+                      'Still offline',
+                      'Check your internet connection and try again.',
+                      snackPosition: SnackPosition.BOTTOM,
+                    );
+                  }
+                },
+                child: const Text('Retry online'),
+              ),
+            ),
+          ],
         ),
       ),
     );

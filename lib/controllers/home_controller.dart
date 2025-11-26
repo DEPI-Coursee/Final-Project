@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:tour_guide/controllers/connection_controller.dart';
@@ -39,9 +40,9 @@ class HomeController extends GetxController {
   final RxString errorMessage = ''.obs;
 
   // API parameters (configurable)
-  final categories = 'tourism.attraction'; // Not used with autocomplete but kept for compatibility
+  final categories = 'tourism.attraction';
   final radius = 10000.0;
-  final limit = 10; // Changed to 10 as requested
+  final limit = 10;
 
   String? pendingPlaceId;
   String? pendingActionType;
@@ -49,30 +50,81 @@ class HomeController extends GetxController {
   // 🚀 FIFO Queue for Lazy Loading Images
   final List<PlaceModel> _imageQueue = [];
   bool _isProcessingQueue = false;
-  Timer? _searchDebounceTimer; // For debouncing search input (350ms)
-  // Note: Processing one image at a time (concurrency=1) - hardcoded in while loop
+  Timer? _searchDebounceTimer;
+  
+  // ✅ Add connection listener
+  StreamSubscription? _connectionSubscription;
 
   Future<void> getlocation() async {
     try {
+      // ✅ Check internet FIRST
+      final connectionController = Get.find<ConnectionController>();
+      final bool hasInternet = await connectionController.hasInternet();
+      
+      if (!hasInternet) {
+        print('🌐 No internet connection - redirecting to offline page');
+        errorMessage.value = '';
+        isLoading.value = false;
+        Get.offAllNamed('/offline-page');
+        return;
+      }
+
+      isLoading.value = true;
+      
       final currentLocation = await locationController.determinePosition();
       location = currentLocation;
+      
       await fetchPlaces(
         latitude: currentLocation.latitude,
         longitude: currentLocation.longitude,
       );
+      
       print(
-      "📍 Current device location: ${currentLocation.latitude}, ${currentLocation.longitude}",
-    );
+        "📍 Current device location: ${currentLocation.latitude}, ${currentLocation.longitude}",
+      );
     } catch (e) {
-      errorMessage.value = e.toString();
-      print('Error getting location: $e');
+      print('❌ Error getting location: $e');
+
+      // On web, any location error should send the user to the offline page
+      if (kIsWeb) {
+        print('🌐 Web: location error - redirecting to offline page');
+        errorMessage.value = '';
+        isLoading.value = false;
+        Get.offAllNamed('/offline-page');
+        return;
+      }
+
+      // On mobile/native, still differentiate network vs other errors
+      final connectionController = Get.find<ConnectionController>();
+      final bool hasInternet = await connectionController.hasInternet();
+      
+      if (!hasInternet) {
+        print('🌐 Network error detected - redirecting to offline page');
+        errorMessage.value = '';
+        isLoading.value = false;
+        Get.offAllNamed('/offline-page');
+      } else {
+        errorMessage.value = e.toString();
+        isLoading.value = false;
+      }
     }
   }
 
   void startTimer() {
     Timer.periodic(50.seconds, (timer) async {
-      print("hello");
+      print("⏰ Timer check triggered");
+      
       try {
+        // ✅ Check internet first in timer
+        final connectionController = Get.find<ConnectionController>();
+        final bool hasInternet = await connectionController.hasInternet();
+        
+        if (!hasInternet) {
+          print('🌐 Timer: No internet - redirecting to offline page');
+          Get.offAllNamed('/offline-page');
+          return;
+        }
+        
         final currentLocation = location;
         final newLocation = await locationController.determinePosition();
 
@@ -91,7 +143,8 @@ class HomeController extends GetxController {
           newLocation.latitude, 
           newLocation.longitude,
         );
-        if(distance >= 200){
+        
+        if (distance >= 200) {
           location = newLocation;
           await fetchPlaces(
             latitude: newLocation.latitude,
@@ -99,7 +152,14 @@ class HomeController extends GetxController {
           );
         }
       } catch (e) {
-        print('Error while updating location in timer: $e');
+        print('❌ Error while updating location in timer: $e');
+        
+        final connectionController = Get.find<ConnectionController>();
+        final bool hasInternet = await connectionController.hasInternet();
+        
+        if (!hasInternet) {
+          Get.offAllNamed('/offline-page');
+        }
       }
     });
   }
@@ -107,22 +167,73 @@ class HomeController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    getlocation();
-    startTimer();
-
+    
+    // ✅ Listen to real-time connection changes
+    _listenToConnectionChanges();
+    
+    // ✅ Check connection and initialize
+    _checkConnectionAndInitialize();
+    
     // ✅ Setup search listener with debounce
     searchController.addListener(_onSearchChanged);
+  }
 
-    // ✅ Load favorites and visit list when controller initializes
-    // if (authService.isLoggedIn()) {
-    //   fetchFavoritePlaces();
-    //   fetchVisitListPlaces();
-    // }
+  /// ✅ NEW: Listen to connection changes in real-time
+  void _listenToConnectionChanges() {
+    final connectionController = Get.find<ConnectionController>();
+    
+    // Listen to the isConnected observable
+    ever(connectionController.isConnected, (bool isConnected) {
+      print('🔄 Connection status changed: $isConnected');
+      
+      if (!isConnected) {
+        print('❌ Lost connection - redirecting to offline page');
+        // Only redirect if we're not already on offline page
+        if (Get.currentRoute != '/offline-page') {
+          Get.offAllNamed('/offline-page');
+        }
+      } else {
+        print('✅ Connection restored');
+        // Optionally reload data when connection is restored
+        // You can add logic here if needed
+      }
+    });
+  }
+
+  /// ✅ Check connection before initializing
+  Future<void> _checkConnectionAndInitialize() async {
+    try {
+      final connectionController = Get.find<ConnectionController>();
+      
+      // Wait a bit for the initial connection check to complete
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      final bool hasInternet = await connectionController.hasInternet();
+      
+      if (!hasInternet) {
+        print('🌐 onInit: No internet - redirecting to offline page');
+        Get.offAllNamed('/offline-page');
+        return;
+      }
+      
+      // Only proceed if we have internet
+      await getlocation();
+      startTimer();
+    } catch (e) {
+      print('❌ Error in initialization: $e');
+      final connectionController = Get.find<ConnectionController>();
+      final bool hasInternet = await connectionController.hasInternet();
+      
+      if (!hasInternet) {
+        Get.offAllNamed('/offline-page');
+      }
+    }
   }
 
   @override
   void onClose() {
     _searchDebounceTimer?.cancel();
+    _connectionSubscription?.cancel();
     searchController.removeListener(_onSearchChanged);
     searchController.dispose();
     super.onClose();
@@ -147,12 +258,21 @@ class HomeController extends GetxController {
     }
 
     try {
+      // ✅ Check internet before search
+      final connectionController = Get.find<ConnectionController>();
+      final bool hasInternet = await connectionController.hasInternet();
+      
+      if (!hasInternet) {
+        print('🌐 Search: No internet - redirecting to offline page');
+        Get.offAllNamed('/offline-page');
+        return;
+      }
+      
       isLoading.value = true;
       errorMessage.value = '';
 
       print('🔍 Searching for: "$searchText"');
 
-      // Use the custom search method from PlacesService
       final List<PlaceModel> searchResults = await placesService.searchCustomTerm(
         searchText: searchText,
         longitude: location!.longitude,
@@ -160,7 +280,6 @@ class HomeController extends GetxController {
         limit: limit,
       );
 
-      // Show results immediately without images
       final List<PlaceModel> quickList = [];
       for (var place in searchResults) {
         if (place.name == null || place.name!.isEmpty) {
@@ -173,14 +292,21 @@ class HomeController extends GetxController {
       places.value = quickList;
       print('✅ Found ${quickList.length} results for "$searchText"');
 
-      // Add to image queue and process
       _imageQueue.clear();
       _imageQueue.addAll(quickList);
       _processImageQueue();
 
     } catch (e) {
-      errorMessage.value = 'Search failed: $e';
       print('❌ Search error: $e');
+      
+      final connectionController = Get.find<ConnectionController>();
+      final bool hasInternet = await connectionController.hasInternet();
+      
+      if (!hasInternet) {
+        Get.offAllNamed('/offline-page');
+      } else {
+        errorMessage.value = 'Search failed: $e';
+      }
     } finally {
       isLoading.value = false;
     }
@@ -198,27 +324,26 @@ class HomeController extends GetxController {
   }
 
   /// 🚀 Fetch places with lazy image loading (FIFO queue)
-  /// Shows places immediately without images, then loads images in background
   Future<void> fetchPlaces({
     required double longitude,
     required double latitude,
-  }) 
-  
-  
-  async {
-    final connectionController = Get.find<ConnectionController>();
-
-  // ✅ 1. If there's no internet, DON'T fetch and DON'T show errors
-  final bool hasInternet = await connectionController.hasInternet();
-  if (!hasInternet) {
-    isLoading.value = false;
-    return;
-  }
+  }) async {
     try {
+      // ✅ Check internet FIRST
+      final connectionController = Get.find<ConnectionController>();
+      final bool hasInternet = await connectionController.hasInternet();
+      
+      if (!hasInternet) {
+        isLoading.value = false;
+        errorMessage.value = '';
+        print('🌐 fetchPlaces: No internet - redirecting to offline page');
+        Get.offAllNamed('/offline-page');
+        return;
+      }
+
       isLoading.value = true;
       errorMessage.value = '';
 
-      // 1️⃣ Fetch places from API
       final List<PlaceModel> basicList = await placesService.getPlaces(
         categories: categories,
         longitude: longitude,
@@ -227,7 +352,6 @@ class HomeController extends GetxController {
         limit: limit,
       );
 
-      // 2️⃣ Show places IMMEDIATELY without images
       final List<PlaceModel> quickList = [];
       for (var place in basicList) {
         if (place.name == null || place.name!.isEmpty) {
@@ -235,34 +359,46 @@ class HomeController extends GetxController {
           continue;
         }
 
-        // Generate placeId
         final placeId = place.placeId ?? generateplaceid(place);
         final quickPlace = place.copyWith(placeId: placeId);
         quickList.add(quickPlace);
       }
 
-      // Update UI immediately with places (no images yet)
       places.value = quickList;
       print('✅ Showing ${quickList.length} places (images loading in background)');
 
-      // 3️⃣ Clear old queue and add new places to image queue
       _imageQueue.clear();
       _imageQueue.addAll(quickList);
-
-      // 4️⃣ Start processing queue in background
       _processImageQueue();
 
     } catch (e) {
-      errorMessage.value = e.toString();
       print('❌ Error fetching places: $e');
-      Get.snackbar('Error', errorMessage.value);
+
+      // On web, treat any fetch error as network-related and go to offline page
+      if (kIsWeb) {
+        print('🌐 Web: error fetching places - redirecting to offline page');
+        errorMessage.value = '';
+        Get.offAllNamed('/offline-page');
+      } else if (e.toString().contains('SocketException') ||
+          e.toString().contains('connection') ||
+          e.toString().contains('Network')) {
+        print('🌐 Network error detected - redirecting to offline page');
+        errorMessage.value = '';
+        Get.offAllNamed('/offline-page');
+      } else {
+        errorMessage.value = 'Failed to load places: $e';
+        Get.snackbar(
+          'Error',
+          'Failed to load places. Please try again later.',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
     } finally {
       isLoading.value = false;
     }
   }
 
   /// 🎯 Process image queue in background (FIFO - First In First Out)
-  /// Loads images one by one with delay between items
   void _processImageQueue() async {
     if (_isProcessingQueue) {
       print('⚠️ Queue already processing, skipping...');
@@ -273,10 +409,8 @@ class HomeController extends GetxController {
     print('🚀 Starting image queue processing (${_imageQueue.length} items)');
 
     while (_imageQueue.isNotEmpty) {
-      // Take first item from queue (FIFO)
       final place = _imageQueue.removeAt(0);
 
-      // Skip if already has image
       if (place.imageUrl != null && place.imageUrl!.isNotEmpty) {
         print('⏭️ Skipping ${place.name} - already has image');
         continue;
@@ -287,10 +421,8 @@ class HomeController extends GetxController {
         await _fetchImageForPlace(place);
       } catch (e) {
         print('❌ Failed to fetch image for ${place.name}: $e');
-        // Continue with next item even if this one fails
       }
 
-      // 🕐 Delay between items (250ms) to avoid overwhelming APIs
       await Future.delayed(const Duration(milliseconds: 250));
     }
 
@@ -299,10 +431,8 @@ class HomeController extends GetxController {
   }
 
   /// 📸 Fetch image and description for a single place
-  /// Updates the place in the list automatically (reactive)
   Future<void> _fetchImageForPlace(PlaceModel place) async {
     try {
-      // Query using wikidata ID or name
       final String? queryId = place.wikidataId ?? place.name;
 
       if (queryId == null || queryId.isEmpty) {
@@ -310,7 +440,6 @@ class HomeController extends GetxController {
         return;
       }
 
-      // Fetch image and description in parallel
       final results = await Future.wait([
         wikiService.getBestImageUrl(queryId),
         wikiService.getSummary(queryId),
@@ -319,30 +448,24 @@ class HomeController extends GetxController {
       final String? imageUrl = results[0];
       final String? description = results[1];
 
-      // Find place in list and update it
       final index = places.indexWhere((p) => p.placeId == place.placeId);
       if (index != -1) {
-        // Create updated place with image and description
         final updatedPlace = places[index].copyWith(
           imageUrl: imageUrl,
           description: description,
         );
 
-        // Update in list (GetX will automatically update UI)
         places[index] = updatedPlace;
         print('✅ Updated ${place.name} with image');
       }
     } catch (e) {
       print('❌ Error fetching image for ${place.name}: $e');
-      // Don't throw - let queue continue
     }
   }
 
-  /// 🔄 Manual image fetch for a specific place (used in place details)
-  /// Fetches immediately with loading indicator
+  /// 🔄 Manual image fetch for a specific place
   Future<void> fetchImageForPlaceImmediate(PlaceModel place) async {
     if (place.imageUrl != null && place.description != null) {
-      // Already has data
       return;
     }
 
@@ -358,7 +481,6 @@ class HomeController extends GetxController {
       final String? imageUrl = results[0];
       final String? description = results[1];
 
-      // Update in list
       final index = places.indexWhere((p) => p.placeId == place.placeId);
       if (index != -1) {
         places[index] = places[index].copyWith(
@@ -371,7 +493,6 @@ class HomeController extends GetxController {
     }
   }
 
-  // Generate placeId - used when placeId is not already set
   String generateplaceid(PlaceModel place) {
     if (place.wikidataId != null && place.wikidataId!.isNotEmpty) {
       return place.wikidataId!;
@@ -379,12 +500,11 @@ class HomeController extends GetxController {
     return '${place.name}-${place.latitude}-${place.longitude}';
   }
 
-  // Get placeId from place, generate if not set
   String getPlaceId(PlaceModel place) {
     return place.placeId ?? generateplaceid(place);
   }
 
-  // ✅ FIXED: Fetch favorites from Firebase
+  // ✅ Fetch favorites from Firebase
   Future<void> fetchFavoritePlaces() async {
     try {
       isFavoritesLoading.value = true;
@@ -440,7 +560,6 @@ class HomeController extends GetxController {
     }
   }
 
-  // ✅ FIXED: Add to favorites (was calling itself before!)
   Future<void> addToFavorites(PlaceModel place) async {
     try {
       print('➕ Adding to favorites: ${place.name}');
@@ -459,7 +578,6 @@ class HomeController extends GetxController {
       await userService.addToFavorites(uid, placeId);
       print('✅ Added to Firebase');
 
-      // Update local list immediately instead of re-fetching
       if (!favoritePlaces.any((p) => getPlaceId(p) == placeId)) {
         favoritePlaces.add(place);
       }
@@ -479,7 +597,6 @@ class HomeController extends GetxController {
     }
   }
 
-  // ✅ Remove from favorites
   Future<void> removeFromFavorites(PlaceModel place) async {
     try {
       print('➖ Removing from favorites: ${place.name}');
@@ -490,7 +607,6 @@ class HomeController extends GetxController {
       final placeId = getPlaceId(place);
       await userService.removeFromFavorites(uid, placeId);
 
-      // Remove from local list immediately for better UX
       favoritePlaces.removeWhere((p) => getPlaceId(p) == placeId);
 
       print('✅ Removed from favorites');
@@ -510,19 +626,16 @@ class HomeController extends GetxController {
     }
   }
 
-  // ✅ Check if place is in favorites
   bool isFavorite(PlaceModel place) {
     final placeId = getPlaceId(place);
     return favoritePlaces.any((p) => getPlaceId(p) == placeId);
   }
 
-  // ✅ Parse PlaceModel from stored placeId
   Future<PlaceModel> _parsePlaceFromId(String placeId) async {
     if (placeId.isEmpty) {
       throw Exception('Invalid placeId');
     }
 
-    // Check if it's a custom format: "name-lat-lng"
     if (placeId.contains('-') && placeId.split('-').length >= 3) {
       final parts = placeId.split('-');
       final lastPart = parts.last;
@@ -542,7 +655,6 @@ class HomeController extends GetxController {
           description = await wikiService.getSummary(name);
         } catch (_) {}
 
-        // Generate placeId for parsed place
         final placeId = '$name-$lat-$lng';
         
         return PlaceModel(
@@ -556,7 +668,6 @@ class HomeController extends GetxController {
       }
     }
 
-    // Wikidata ID fallback
     print('🆔 Parsed as Wikidata ID: $placeId');
 
     String? imageUrl;
@@ -571,11 +682,10 @@ class HomeController extends GetxController {
       wikidataId: placeId,
       imageUrl: imageUrl,
       description: description,
-      placeId: placeId, // Use wikidataId as placeId
+      placeId: placeId,
     );
   }
 
-  // ✅ Add place to visit list with date/time and schedule notification
   Future<void> addToVisitListWithDateTime(PlaceModel place, DateTime visitDateTime) async {
     try {
       print('➕ Adding to visit list: ${place.name} at $visitDateTime');
@@ -591,23 +701,19 @@ class HomeController extends GetxController {
       final placeId = getPlaceId(place);
       print('📝 Using place ID: $placeId');
 
-      // Add to visit list in Firebase
       await userService.addToVisitListWithDateTime(uid, placeId, visitDateTime);
       print('✅ Added to Firebase');
 
-      // Schedule notification 30 minutes before visit time
       await notificationService.scheduleVisitReminderNotification(
         placeId: placeId,
         placeName: place.name ?? 'Unknown Place',
         visitDateTime: visitDateTime,
       );
 
-      // Update local list immediately instead of re-fetching
       if (!visitListPlaces.any((p) => getPlaceId(p) == placeId)) {
         visitListPlaces.add(place);
         visitListItemsWithDates[placeId] = visitDateTime;
       } else {
-        // Update existing entry
         visitListItemsWithDates[placeId] = visitDateTime;
       }
 
@@ -627,7 +733,6 @@ class HomeController extends GetxController {
     }
   }
 
-  // ✅ Fetch visit list places from Firebase
   Future<void> fetchVisitListPlaces() async {
     try {
       isVisitListLoading.value = true;
@@ -693,19 +798,16 @@ class HomeController extends GetxController {
     }
   }
 
-  // ✅ Get visit date/time for a place
   DateTime? getVisitDateTime(PlaceModel place) {
     final placeId = getPlaceId(place);
     return visitListItemsWithDates[placeId];
   }
 
-  // ✅ Check if place is in visit list
   bool isInVisitList(PlaceModel place) {
     final placeId = getPlaceId(place);
     return visitListItemsWithDates.containsKey(placeId);
   }
 
-  // ✅ Remove place from visit list and cancel notification
   Future<void> removeFromVisitListWithDateTime(PlaceModel place) async {
     try {
       print('➖ Removing from visit list: ${place.name}');
@@ -715,13 +817,9 @@ class HomeController extends GetxController {
 
       final placeId = getPlaceId(place);
       
-      // Remove from Firebase
       await userService.removeFromVisitList(uid, placeId);
-      
-      // Cancel scheduled notification
       await notificationService.cancelVisitReminderNotification(placeId);
 
-      // Update local list immediately instead of re-fetching
       visitListPlaces.removeWhere((p) => getPlaceId(p) == placeId);
       visitListItemsWithDates.remove(placeId);
 
