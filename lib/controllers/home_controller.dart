@@ -31,8 +31,14 @@ class HomeController extends GetxController {
   final RxBool isFavoritesLoading = false.obs;
 
   final RxList<PlaceModel> visitListPlaces = <PlaceModel>[].obs;
-  final RxMap<String, DateTime> visitListItemsWithDates = <String, DateTime>{}.obs;
+  final RxMap<String, DateTime> visitListItemsWithDates =
+      <String, DateTime>{}.obs;
   final RxBool isVisitListLoading = false.obs;
+
+  RxList<PlaceModel> visiblePlaces = <PlaceModel>[].obs;
+  int itemsPerPage = 10;
+  int currentOffset = 0;
+  RxBool isLoadingMore = false.obs;
 
   // Observable variables
   final RxList<PlaceModel> places = <PlaceModel>[].obs;
@@ -56,7 +62,7 @@ class HomeController extends GetxController {
   StreamSubscription? _connectionSubscription;
 
   final RxList<PlaceModel> allPlaces = <PlaceModel>[].obs;
-  final  placeType =  [
+  final placeType = [
     'All',
     'Museum',
     'Restaurant',
@@ -78,19 +84,17 @@ class HomeController extends GetxController {
 
     // All → reset the original list
     if (selectedType == 'All') {
-      places.value = allPlaces;
+      places.value = List<PlaceModel>.from(allPlaces);
+      loadInitialPlaces();
       return;
     }
 
     // Filter based on place.type
     places.value = allPlaces.where((place) {
-      return (place.type ?? '').toLowerCase() ==
-          selectedType.toLowerCase();
+      return (place.type ?? '').toLowerCase() == selectedType.toLowerCase();
     }).toList();
+    loadInitialPlaces();
   }
-
-
-
 
   Future<void> getlocation() async {
     try {
@@ -310,12 +314,13 @@ class HomeController extends GetxController {
 
       print('🔍 Searching for: "$searchText"');
 
-      final List<PlaceModel> searchResults = await placesService.searchCustomTerm(
-        searchText: searchText,
-        longitude: location!.longitude,
-        latitude: location!.latitude,
-        limit: limit,
-      );
+      final List<PlaceModel> searchResults = await placesService
+          .searchCustomTerm(
+            searchText: searchText,
+            longitude: location!.longitude,
+            latitude: location!.latitude,
+            limit: limit,
+          );
 
       final List<PlaceModel> quickList = [];
       for (var place in searchResults) {
@@ -333,7 +338,7 @@ class HomeController extends GetxController {
       _imageQueue.clear();
       _imageQueue.addAll(quickList);
       _processImageQueue();
-
+      loadInitialPlaces();
     } catch (e) {
       print('❌ Search error: $e');
 
@@ -354,10 +359,7 @@ class HomeController extends GetxController {
   void clearSearch() {
     searchController.clear();
     if (location != null) {
-      fetchPlaces(
-        longitude: location!.longitude,
-        latitude: location!.latitude,
-      );
+      fetchPlaces(longitude: location!.longitude, latitude: location!.latitude);
     }
   }
 
@@ -405,12 +407,14 @@ class HomeController extends GetxController {
       places.value = quickList;
       allPlaces.value = quickList;
 
-      print('✅ Showing ${quickList.length} places (images loading in background)');
+      print(
+        '✅ Showing ${quickList.length} places (images loading in background)',
+      );
 
       _imageQueue.clear();
       _imageQueue.addAll(quickList);
       _processImageQueue();
-
+      loadInitialPlaces();
     } catch (e) {
       print('❌ Error fetching places: $e');
 
@@ -436,6 +440,38 @@ class HomeController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  void loadInitialPlaces() {
+    visiblePlaces.clear();
+
+    final listToLoad = places.value;
+    final end = itemsPerPage > listToLoad.length
+        ? listToLoad.length
+        : itemsPerPage;
+
+    visiblePlaces.addAll(listToLoad.sublist(0, end));
+    currentOffset = end;
+  }
+
+  void loadMorePlaces() {
+    if (isLoadingMore.value) return;
+
+    final listToLoad = places.value; // القائمة المفلترة
+    if (currentOffset >= listToLoad.length) return;
+
+    isLoadingMore.value = true;
+
+    Future.delayed(const Duration(milliseconds: 400), () {
+      final nextOffset = currentOffset + itemsPerPage;
+      final end = nextOffset > listToLoad.length
+          ? listToLoad.length
+          : nextOffset;
+
+      visiblePlaces.addAll(listToLoad.sublist(currentOffset, end));
+      currentOffset = end;
+      isLoadingMore.value = false;
+    });
   }
 
   /// 🎯 Process image queue in background (FIFO - First In First Out)
@@ -496,6 +532,12 @@ class HomeController extends GetxController {
         );
 
         places[index] = updatedPlace;
+        final visibleIndex = visiblePlaces.indexWhere(
+          (p) => p.placeId == place.placeId,
+        );
+        if (visibleIndex != -1) {
+          visiblePlaces[visibleIndex] = updatedPlace;
+        }
         print('✅ Updated ${place.name} with image');
       }
     } catch (e) {
@@ -523,10 +565,17 @@ class HomeController extends GetxController {
 
       final index = places.indexWhere((p) => p.placeId == place.placeId);
       if (index != -1) {
-        places[index] = places[index].copyWith(
+        final updatedPlace = places[index].copyWith(
           imageUrl: imageUrl,
           description: description,
         );
+        places[index] = updatedPlace;
+        final visibleIndex = visiblePlaces.indexWhere(
+          (p) => p.placeId == place.placeId,
+        );
+        if (visibleIndex != -1) {
+          visiblePlaces[visibleIndex] = updatedPlace;
+        }
       }
     } catch (e) {
       print('❌ Error in immediate fetch: $e');
@@ -726,7 +775,10 @@ class HomeController extends GetxController {
     );
   }
 
-  Future<void> addToVisitListWithDateTime(PlaceModel place, DateTime visitDateTime) async {
+  Future<void> addToVisitListWithDateTime(
+    PlaceModel place,
+    DateTime visitDateTime,
+  ) async {
     try {
       print('➕ Adding to visit list: ${place.name} at $visitDateTime');
 
