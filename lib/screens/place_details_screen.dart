@@ -136,32 +136,67 @@ class _PlaceDetailsState extends State<PlaceDetails> {
                   topRight: Radius.circular(16),
                 ),
                 child: place!.imageUrl != null && place!.imageUrl!.isNotEmpty
-                    ? CachedNetworkImage(
-                        imageUrl: place!.imageUrl!,
-                        height: 200,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          height: 200,
-                          color: Colors.grey.shade700,
-                          child: const Center(
-                            child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white54),
+                    ? (place!.imageUrl!.startsWith('assets/')
+                        ? Image.asset(
+                            place!.imageUrl!,
+                            height: 200,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              print('❌ Error loading asset image in details: ${place!.imageUrl}');
+                              print('Error: $error');
+                              return Container(
+                                height: 200,
+                                color: Colors.grey.shade600,
+                                child: Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(
+                                        Icons.broken_image,
+                                        size: 48,
+                                        color: Colors.white70,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Asset not found',
+                                        style: TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          )
+                        : CachedNetworkImage(
+                            imageUrl: place!.imageUrl!,
+                            height: 200,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(
+                              height: 200,
+                              color: Colors.grey.shade700,
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white54),
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                        errorWidget: (context, url, error) => Container(
-                          height: 200,
-                          color: Colors.grey.shade600,
-                          child: const Center(
-                            child: Icon(
-                              Icons.broken_image,
-                              size: 48,
-                              color: Colors.white70,
+                            errorWidget: (context, url, error) => Container(
+                              height: 200,
+                              color: Colors.grey.shade600,
+                              child: const Center(
+                                child: Icon(
+                                  Icons.broken_image,
+                                  size: 48,
+                                  color: Colors.white70,
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                      )
+                          ))
                     : Container(
                         height: 200,
                         color: Theme.of(context).cardColor,

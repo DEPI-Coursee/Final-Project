@@ -17,12 +17,11 @@ class PlacesService {
     'متحف',           // Museum
     'مطعم',           // Restaurant
     'حديقة',          // Park
-    'معلم سياحي',     // Tourist attraction
-    'مسجد',           // Mosque
+    'محميه',     // Tourist attraction
+    'مسج',           // Mosque
     'كنيسة',          // Church
-    'قلعة',           // Castle
-    'سوق',
-    'فندق',
+    'Citadel',           // Castle
+    //'فندق',
     'كافيه',
     'سينما',
     'مستشفي',
@@ -32,18 +31,18 @@ class PlacesService {
     'متحف': 'Museum',
     'مطعم': 'Restaurant',
     'حديقة': 'Park',
-    'معلم سياحي': 'Tourist Attraction',
-    'مسجد': 'Mosque',
+    'محميه': 'Nature preserve',
+    'مسج': 'Mosque',
     'كنيسة': 'Church',
-    'قلعة': 'Castle',
-    'سوق': 'Market',
-    'فندق': 'Hotel',
+    'Citadel': 'Castle',
+    //'فندق': 'Hotel',
     'كافيه': 'Cafe',
     'سينما': 'Cinema',
     'مستشفي': 'Hospital',
   };
 
   /// This searches multiple categories and returns combined results
+  /// 🚀 OPTIMIZED: All API calls are now executed in parallel for faster loading
   Future<List<PlaceModel>> getPlaces({
     required String categories, // Kept for backward compatibility but not used
     required double longitude,
@@ -52,10 +51,8 @@ class PlacesService {
     int limit = 10,
   }) async {
     try {
-      List<PlaceModel> allPlaces = [];
-
-      // Search for each static term
-      for (String searchTerm in staticSearchTerms) {
+      // 🚀 Execute all searches in parallel instead of sequentially
+      final List<Future<List<PlaceModel>>> searchFutures = staticSearchTerms.map((searchTerm) async {
         try {
           // حفظ النوع الإنجليزي حسب الترجمة
           final englishType = placeTypeTranslations[searchTerm] ?? 'Unknown';
@@ -68,14 +65,20 @@ class PlacesService {
           );
 
           // إضافة الـ type لكل نتيجة
-          final updatedPlaces = places.map((p) => p.copyWith(type: englishType)).toList();
-          allPlaces.addAll(updatedPlaces);
-
+          return places.map((p) => p.copyWith(type: englishType)).toList();
         } catch (e) {
           print('⚠️ Error searching for "$searchTerm": $e');
-          // Continue with other search terms even if one fails
+          // Return empty list if search fails, so other searches can continue
+          return <PlaceModel>[];
         }
-      }
+      }).toList();
+
+      // Wait for all searches to complete in parallel
+      final List<List<PlaceModel>> results = await Future.wait(searchFutures);
+      
+      // Flatten all results into a single list
+      //This line converts a list of lists into a single flat list.
+      final List<PlaceModel> allPlaces = results.expand((places) => places).toList();
 
       // Remove duplicates based on place_id
       final uniquePlaces = <String, PlaceModel>{};
@@ -86,7 +89,7 @@ class PlacesService {
         }
       }
 
-      print('✅ Found ${uniquePlaces.length} unique places from ${staticSearchTerms.length} categories');
+      print('✅ Found ${uniquePlaces.length} unique places from ${staticSearchTerms.length} categories (loaded in parallel)');
       return uniquePlaces.values.toList();
 
     } catch (e) {

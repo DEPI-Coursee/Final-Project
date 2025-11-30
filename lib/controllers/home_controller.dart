@@ -15,6 +15,7 @@ import '../services/notification_service.dart';
 
 class HomeController extends GetxController {
   final searchController = TextEditingController();
+  final RxBool hasSearchText = false.obs;
 
   final WikipediaImageService wikiService = WikipediaImageService();
   final LocationController locationController = Get.find<LocationController>();
@@ -61,15 +62,14 @@ class HomeController extends GetxController {
     'Museum',
     'Restaurant',
     'Park',
-    'Tourist Attraction',
+    'Nature preserve',
     'Mosque',
     'Church',
     'Castle',
-    'Market',
-    'Hotel',
     'Cafe',
     'Cinema',
     'Hospital',
+    // 'Hotel',
   ];
   final selected = 0.obs;
   // ⭐⭐⭐ FIRST METHOD BELOW VARIABLES ⭐⭐⭐
@@ -213,6 +213,8 @@ class HomeController extends GetxController {
 
     // ✅ Setup search listener with debounce
     searchController.addListener(_onSearchChanged);
+    // ✅ Listen to text changes for clear button visibility
+    searchController.addListener(_updateSearchText);
   }
 
   /// ✅ NEW: Listen to connection changes in real-time
@@ -272,6 +274,7 @@ class HomeController extends GetxController {
     _searchDebounceTimer?.cancel();
     _connectionSubscription?.cancel();
     searchController.removeListener(_onSearchChanged);
+    searchController.removeListener(_updateSearchText);
     searchController.dispose();
     super.onClose();
   }
@@ -285,6 +288,11 @@ class HomeController extends GetxController {
         _performCustomSearch(query);
       }
     });
+  }
+
+  /// Update reactive variable for search text visibility
+  void _updateSearchText() {
+    hasSearchText.value = searchController.text.isNotEmpty;
   }
 
   /// 🔎 Perform custom search with user input
@@ -353,6 +361,7 @@ class HomeController extends GetxController {
   /// 🔄 Clear search and reload default places
   void clearSearch() {
     searchController.clear();
+    hasSearchText.value = false;
     if (location != null) {
       fetchPlaces(
         longitude: location!.longitude,
@@ -362,10 +371,7 @@ class HomeController extends GetxController {
   }
 
   /// 🚀 Fetch places with lazy image loading (FIFO queue)
-  Future<void> fetchPlaces({
-    required double longitude,
-    required double latitude,
-  }) async {
+  Future<void> fetchPlaces({required double longitude, required double latitude,}) async {
     try {
       // ✅ Check internet FIRST
       final connectionController = Get.find<ConnectionController>();
@@ -404,6 +410,8 @@ class HomeController extends GetxController {
 
       places.value = quickList;
       allPlaces.value = quickList;
+
+      places.shuffle();
 
       print('✅ Showing ${quickList.length} places (images loading in background)');
 
@@ -482,24 +490,81 @@ class HomeController extends GetxController {
 
       final results = await Future.wait([
         wikiService.getBestImageUrl(queryId),
-        wikiService.getSummary(queryId),
+        // wikiService.getSummary(queryId),
       ]);
 
       final String? imageUrl = results[0];
-      final String? description = results[1];
+      // final String? description = results[1];
 
       final index = places.indexWhere((p) => p.placeId == place.placeId);
       if (index != -1) {
-        final updatedPlace = places[index].copyWith(
-          imageUrl: imageUrl,
-          description: description,
-        );
-
-        places[index] = updatedPlace;
-        print('✅ Updated ${place.name} with image');
+        if (imageUrl != null && imageUrl.isNotEmpty) {
+          final updatedPlace = places[index].copyWith(
+            imageUrl: imageUrl,
+            // description: description,
+          );
+          places[index] = updatedPlace;
+          print('✅ Updated ${place.name} with image');
+        }else{
+          final updatedPlace = putCategoryImage(places[index]);
+          places[index] = updatedPlace;
+          print('✅ Updated ${place.name} with category image');
+        }
       }
     } catch (e) {
       print('❌ Error fetching image for ${place.name}: $e');
+    }
+  }
+
+  /// 🖼️ Add category image from assets based on place type
+  PlaceModel putCategoryImage(PlaceModel place) {
+    try {
+      final String? placeType = place.type;
+      
+      print('🖼️ putCategoryImage called for: ${place.name}, type: $placeType');
+      
+      if (placeType == null || placeType.isEmpty) {
+        print('⚠️ No type specified for place: ${place.name}');
+        return place;
+      }
+
+      // Map place types to asset image paths
+      final Map<String, String> typeToAssetMap = {
+        'Museum': 'assets/categories_imgs/Museum.png',
+        'Restaurant': 'assets/categories_imgs/resturant.png',
+        'Park': 'assets/categories_imgs/park.jpg',
+        'Nature preserve': 'assets/categories_imgs/Nature preserve.jpg',
+        'Mosque': 'assets/categories_imgs/Mosque.jpg',
+        'Church': 'assets/categories_imgs/Church.png',
+        'Castle': 'assets/categories_imgs/Castle.png',
+        'Cafe': 'assets/categories_imgs/cafe.png',
+        'Cinema': 'assets/categories_imgs/cinema.png',
+        'Hospital': 'assets/categories_imgs/hospital.jpg',
+        // 'Hotel': 'assets/categories_imgs/Hotel-Cairo_four_se.jpg',
+      };
+
+      // Find matching asset path (case-insensitive)
+      String? assetPath;
+      for (var entry in typeToAssetMap.entries) {
+        if (entry.key.toLowerCase() == placeType.toLowerCase()) {
+          assetPath = entry.value;
+          print('✅ Found asset path: $assetPath for type: $placeType');
+          break;
+        }
+      }
+
+      if (assetPath == null) {
+        print('⚠️ No asset image found for type: $placeType (available types: ${typeToAssetMap.keys.join(", ")})');
+        return place;
+      }
+
+      // Return updated place with asset image path
+      final updatedPlace = place.copyWith(imageUrl: assetPath);
+      print('✅ Updated place ${place.name} with asset image: $assetPath');
+      return updatedPlace;
+    } catch (e) {
+      print('❌ Error setting category image for ${place.name}: $e');
+      return place;
     }
   }
 

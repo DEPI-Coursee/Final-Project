@@ -49,6 +49,7 @@ dependencies:
   http: ^1.2.0
   cached_network_image: ^3.3.1
   connectivity_plus: ^7.0.0
+  shared_preferences: ^2.2.2
 
 
 dev_dependencies:
@@ -76,6 +77,19 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/
+    - assets/categories_imgs/
+    - assets/categories_imgs/cafe.png
+    - assets/categories_imgs/Castle.png
+    - assets/categories_imgs/Church.png
+    - assets/categories_imgs/cinema.png
+    - assets/categories_imgs/Hotel-Cairo_four_se.jpg
+    - assets/categories_imgs/market.jpg
+    - assets/categories_imgs/Mosque.jpg
+    - assets/categories_imgs/Museum.png
+    - assets/categories_imgs/park.jpg
+    - assets/categories_imgs/resturant.png
+    - assets/categories_imgs/hospital.jpg
+    - assets/categories_imgs/Nature preserve.jpg
   #   - images/a_dot_ham.jpeg
 
 

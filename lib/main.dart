@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:tour_guide/bindings/AppBinding.dart';
 import 'package:tour_guide/controllers/connection_controller.dart';
+import 'package:tour_guide/controllers/theme_controller.dart';
 import 'package:tour_guide/internet_middleware.dart';
 import 'package:tour_guide/screens/getStrated_screen.dart';
 import 'package:tour_guide/screens/home_screen.dart';
@@ -21,6 +23,12 @@ import 'package:tour_guide/services/work_manager_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Set preferred orientations to portrait only
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
   
   print('🚀 App starting...');
   
@@ -63,11 +71,19 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Tour Guide App',
-      initialRoute: '/splash',
-      initialBinding: AppBinding(),
+    // Initialize binding to ensure ThemeController is available
+    if (!Get.isRegistered<ThemeController>()) {
+      AppBinding().dependencies();
+    }
+    
+    return Obx(() {
+      final ThemeController themeController = Get.find<ThemeController>();
+      return GetMaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Tour Guide App',
+        initialRoute: '/splash',
+        initialBinding: AppBinding(),
+        themeMode: themeController.themeMode.value,
       getPages: [
         // ✅ Offline page should have NO middleware
         GetPage(
@@ -136,7 +152,71 @@ class MyApp extends StatelessWidget {
           }),
         ),
       ],
+      // 🌞 Light Theme - Compatible with your blue color palette
       theme: ThemeData(
+        brightness: Brightness.light,
+        primarySwatch: Colors.blue,
+        primaryColor: const Color(0xFF1B3377), // Same primary blue
+        scaffoldBackgroundColor: const Color(0xFFF0F4F8), // Light blue-gray background
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF84AAF6), // Same light blue app bar
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
+        cardColor: Colors.white, // White cards for contrast
+        dividerColor: const Color(0xFFD6E4F0), // Light blue-gray divider
+        textTheme: const TextTheme(
+          headlineLarge: TextStyle(color: Color(0xFF0C1323)), // Dark blue-black text
+          headlineMedium: TextStyle(color: Color(0xFF0C1323)),
+          headlineSmall: TextStyle(color: Color(0xFF0C1323)),
+          titleLarge: TextStyle(color: Color(0xFF1B3377)), // Primary blue for titles
+          titleMedium: TextStyle(color: Color(0xFF1B3377)),
+          titleSmall: TextStyle(color: Color(0xFF1B3377)),
+          bodyLarge: TextStyle(color: Color(0xFF273E65)), // Medium blue-gray
+          bodyMedium: TextStyle(color: Color(0xFF273E65)),
+          bodySmall: TextStyle(color: Color(0xFF334155)), // Lighter blue-gray
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: const Color(0xFFE3EAF3), // Light blue-gray input background
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Color(0xFFD6E4F0)), // Light blue border
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Color(0xFFD6E4F0)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Color(0xFF1B3377), width: 2), // Primary blue focus
+          ),
+          labelStyle: const TextStyle(color: Color(0xFF273E65)), // Medium blue-gray
+          hintStyle: const TextStyle(color: Color(0xFF5A7BA8)), // Lighter blue-gray
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF84AAF6), // Same light blue button
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(foregroundColor: const Color(0xFF1B3377)), // Primary blue
+        ),
+        drawerTheme: const DrawerThemeData(
+          backgroundColor: Color(0xFFF8FAFC), // Very light blue-white
+        ),
+        listTileTheme: const ListTileThemeData(
+          textColor: Color(0xFF1B3377), // Primary blue text
+          iconColor: Color(0xFF5A7BA8), // Medium blue-gray icons
+        ),
+      ),
+      // 🌙 Dark Theme
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
         primarySwatch: Colors.blue,
         primaryColor: const Color(0xFF1B3377),
         scaffoldBackgroundColor: const Color(0xFF0C1323),
@@ -194,6 +274,7 @@ class MyApp extends StatelessWidget {
           iconColor: Colors.white70,
         ),
       ),
-    );
+      );
+    });
   }
 }

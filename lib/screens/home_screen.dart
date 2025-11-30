@@ -5,12 +5,34 @@ import 'package:tour_guide/models/place_model.dart';
 import 'package:tour_guide/screens/favorits_screen.dart';
 import 'package:tour_guide/screens/visit_list_screen.dart';
 import '../controllers/home_controller.dart';
+import '../controllers/theme_controller.dart';
 
 class HomeScreen extends StatelessWidget {
   HomeScreen({super.key});
 
   // ✅ Use the globally registered HomeController
   final HomeController controller = Get.find<HomeController>();
+  // ✅ Get ThemeController for theme switching
+  final ThemeController themeController = Get.find<ThemeController>();
+
+  // Helper function to get asset path for each category
+  static String _getCategoryAssetPath(String category) {
+    final Map<String, String> categoryAssetMap 
+    = {
+      'Museum': 'assets/categories_imgs/Museum.png',
+      'Restaurant': 'assets/categories_imgs/resturant.png',
+      'Park': 'assets/categories_imgs/park.jpg',
+      'Nature preserve': 'assets/categories_imgs/Nature preserve.jpg',
+      'Mosque': 'assets/categories_imgs/Mosque.jpg',
+      'Church': 'assets/categories_imgs/Church.png',
+      'Castle': 'assets/categories_imgs/Castle.png',
+      'Cafe': 'assets/categories_imgs/cafe.png',
+      'Cinema': 'assets/categories_imgs/cinema.png',
+      'Hospital': 'assets/categories_imgs/hospital.jpg',
+      // 'Hotel': 'assets/categories_imgs/Hotel-Cairo_four_se.jpg',
+    };
+    return categoryAssetMap[category] ?? 'assets/categories_imgs/Museum.png';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +47,26 @@ class HomeScreen extends StatelessWidget {
             fontSize: 28,
           ),
         ),
+        actions: [
+          // 🎨 Theme Toggle Button
+          Obx(() => IconButton(
+            icon: Icon(
+              themeController.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+            ),
+            tooltip: themeController.isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+            onPressed: () {
+              themeController.toggleTheme();
+            },
+          )),
+          // 🍔 Drawer Menu Button
+          Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.menu),
+              tooltip: 'Open menu',
+              onPressed: () => Scaffold.of(context).openEndDrawer(),
+            ),
+          ),
+        ],
       ),
       endDrawer: Drawer(
         child: ListView(
@@ -78,6 +120,19 @@ class HomeScreen extends StatelessWidget {
               onTap: () {},
             ),
             const Divider(),
+            // Obx(() => ListTile(
+            //   leading: Icon(
+            //     themeController.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+            //   ),
+            //   title: Text(
+            //     themeController.isDarkMode ? 'Light Mode' : 'Dark Mode',
+            //   ),
+            //   onTap: () {
+            //     themeController.toggleTheme();
+            //     Get.back(); // Close drawer after toggling
+            //   },
+            // )),
+            // const Divider(),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.grey),
               title: const Text('Logout'),
@@ -120,13 +175,16 @@ class HomeScreen extends StatelessWidget {
                         Icons.search,
                         color: Theme.of(context).primaryColor,
                       ),
-                      suffixIcon: IconButton(
-                        onPressed: controller.clearSearch,
-                        icon: Icon(
-                          Icons.clear,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                        tooltip: 'Clear search',
+                      suffixIcon: Obx(() => controller.hasSearchText.value
+                          ? IconButton(
+                              onPressed: controller.clearSearch,
+                              icon: Icon(
+                                Icons.clear,
+                                color: Theme.of(context).primaryColor,
+                              ),
+                              tooltip: 'Clear search',
+                            )
+                          : const SizedBox.shrink(),
                       ),
                     ),
                     textInputAction: TextInputAction.search,
@@ -150,15 +208,19 @@ class HomeScreen extends StatelessWidget {
                             onTap: () {
                               controller.selected.value = index;
                               controller.filterPlacesByType();
-for(PlaceModel v in controller.allPlaces ){ print(v.type);}
+// for(PlaceModel v in controller.allPlaces ){ print(v.type);}
 
                             },
                             child: Container(
                               margin: const EdgeInsets.symmetric(horizontal: 8),
                               decoration: BoxDecoration(
                                 color: selectedIndex == index
-                                    ? Theme.of(context).primaryColor
-                                    : const Color(0xFF273E65),
+                                    ?Theme.of(context).brightness == Brightness.dark
+                                        ? Theme.of(context).primaryColor
+                                        : const Color(0xFF84AAF6)
+                                    : Theme.of(context).brightness == Brightness.dark
+                                        ? const Color(0xFF273E65).withOpacity(0.4)
+                                        : const Color(0xFF84AAF6).withOpacity(0.4),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               padding: const EdgeInsets.symmetric(
@@ -166,14 +228,31 @@ for(PlaceModel v in controller.allPlaces ){ print(v.type);}
                                 horizontal: 20,
                               ),
                               child: Center(
-                                child: Text(
-                                  categories[index],
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                    color: selectedIndex == index
-                                        ? Colors.white
-                                        : Colors.white60,
-                                  ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (categories[index] != 'All')
+                                      Image.asset(
+                                        HomeScreen._getCategoryAssetPath(categories[index]),
+                                        width: 30,
+                                        height: 30,
+                                        errorBuilder: (context, error, stackTrace) =>
+                                            const SizedBox(width: 20, height: 20),
+                                      ),
+                                    if (categories[index] != 'All')
+                                      const SizedBox(width: 6),
+                                    Text(
+                                      categories[index],
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                        color: selectedIndex == index
+                                            ? Colors.white
+                                            : Theme.of(context).brightness == Brightness.dark
+                                                ? Colors.white60
+                                                : Theme.of(context).textTheme.bodyMedium?.color,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
@@ -274,33 +353,72 @@ for(PlaceModel v in controller.allPlaces ){ print(v.type);}
                                         place.imageUrl!.isNotEmpty
                                     ? ClipRRect(
                                         borderRadius: BorderRadius.circular(15),
-                                        child: CachedNetworkImage(
-                                          imageUrl: place.imageUrl!,
-                                          fit: BoxFit.cover,
-                                          width: double.infinity,
-                                          height: double.infinity,
-                                          placeholder: (context, url) =>
-                                              Container(
-                                            color: Colors.grey.shade800,
-                                            child: Center(
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                valueColor:
-                                                    AlwaysStoppedAnimation<Color>(
-                                                  Colors.white54,
+                                        child: place.imageUrl!.startsWith('assets/')
+                                            ? Builder(
+                                                builder: (context) {
+                                                  print('🖼️ Loading asset image: ${place.imageUrl} for ${place.name}');
+                                                  return Image.asset(
+                                                    place.imageUrl!,
+                                                    fit: BoxFit.cover,
+                                                    width: double.infinity,
+                                                    height: double.infinity,
+                                                    errorBuilder: (context, error, stackTrace) {
+                                                      print('❌ Error loading asset image: ${place.imageUrl}');
+                                                      print('Error: $error');
+                                                      return Container(
+                                                        color: Colors.grey.shade800,
+                                                        child: Center(
+                                                          child: Column(
+                                                            mainAxisAlignment: MainAxisAlignment.center,
+                                                            children: [
+                                                              const Icon(
+                                                                Icons.broken_image,
+                                                                size: 48,
+                                                                color: Colors.white70,
+                                                              ),
+                                                              const SizedBox(height: 8),
+                                                              Text(
+                                                                'Asset not found',
+                                                                style: TextStyle(
+                                                                  color: Colors.white70,
+                                                                  fontSize: 10,
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      );
+                                                    },
+                                                  );
+                                                },
+                                              )
+                                            : CachedNetworkImage(
+                                                imageUrl: place.imageUrl!,
+                                                fit: BoxFit.cover,
+                                                width: double.infinity,
+                                                height: double.infinity,
+                                                placeholder: (context, url) =>
+                                                    Container(
+                                                  color: Colors.grey.shade800,
+                                                  child: Center(
+                                                    child: CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                      valueColor:
+                                                          AlwaysStoppedAnimation<Color>(
+                                                        Colors.white54,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                                errorWidget: (context, url, error) =>
+                                                    const Center(
+                                                  child: Icon(
+                                                    Icons.broken_image,
+                                                    size: 48,
+                                                    color: Colors.white70,
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                          ),
-                                          errorWidget: (context, url, error) =>
-                                              const Center(
-                                            child: Icon(
-                                              Icons.broken_image,
-                                              size: 48,
-                                              color: Colors.white70,
-                                            ),
-                                          ),
-                                        ),
                                       )
                                     : Container(
                                         color: Colors.grey.shade800,
@@ -335,7 +453,7 @@ for(PlaceModel v in controller.allPlaces ){ print(v.type);}
                                     ),
                                     const SizedBox(height: 6),
                                     Text(
-                                      place.description ??
+                                      // place.description ??
                                           place.addressLine2 ??
                                           'No description available.',
                                       style:
@@ -374,7 +492,7 @@ for(PlaceModel v in controller.allPlaces ){ print(v.type);}
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
-                                            place.category ?? 'Place',
+                                            place.type ?? 'Place',
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodySmall

@@ -173,17 +173,29 @@ class _VisitListScreenState extends State<VisitListScreen> {
           Expanded(
             flex: 45,
             child: place.imageUrl != null && place.imageUrl!.isNotEmpty
-                ? Image.network(
-                    place.imageUrl!,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    errorBuilder: (_, __, ___) => Container(
-                      color: Colors.grey,
-                      child: const Center(
-                        child: Icon(Icons.broken_image, size: 24, color: Colors.white70),
-                      ),
-                    ),
-                  )
+                ? (place.imageUrl!.startsWith('assets/')
+                    ? Image.asset(
+                        place.imageUrl!,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: Colors.grey,
+                          child: const Center(
+                            child: Icon(Icons.broken_image, size: 24, color: Colors.white70),
+                          ),
+                        ),
+                      )
+                    : Image.network(
+                        place.imageUrl!,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: Colors.grey,
+                          child: const Center(
+                            child: Icon(Icons.broken_image, size: 24, color: Colors.white70),
+                          ),
+                        ),
+                      ))
                 : Container(
                     color: Colors.grey.shade300,
                     child: const Center(

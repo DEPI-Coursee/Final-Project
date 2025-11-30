@@ -248,18 +248,31 @@ class DestinationCard extends StatelessWidget {
             Expanded(
               flex: 3,
               child: place.imageUrl != null && place.imageUrl!.isNotEmpty
-                  ? Image.network(
-                      place.imageUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        color: Colors.grey.shade800,
-                        child: const Icon(
-                          Icons.broken_image,
-                          size: 32,
-                          color: Colors.white54,
-                        ),
-                      ),
-                    )
+                  ? (place.imageUrl!.startsWith('assets/')
+                      ? Image.asset(
+                          place.imageUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            color: Colors.grey.shade800,
+                            child: const Icon(
+                              Icons.broken_image,
+                              size: 32,
+                              color: Colors.white54,
+                            ),
+                          ),
+                        )
+                      : Image.network(
+                          place.imageUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            color: Colors.grey.shade800,
+                            child: const Icon(
+                              Icons.broken_image,
+                              size: 32,
+                              color: Colors.white54,
+                            ),
+                          ),
+                        ))
                   : Container(
                       color: Colors.grey.shade800,
                       child: const Column(
