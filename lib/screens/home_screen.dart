@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:lazy_load_scrollview/lazy_load_scrollview.dart';
 import 'package:tour_guide/models/place_model.dart';
 import 'package:tour_guide/screens/favorits_screen.dart';
 import 'package:tour_guide/screens/visit_list_screen.dart';
@@ -324,29 +325,42 @@ class HomeScreen extends StatelessWidget {
                 }
 
                 // Show places list
-                return ListView.builder(
-                  itemCount: controller.places.length,
-                  itemBuilder: (ctx, index) {
-                    final place = controller.places[index];
-                    return InkWell(
-                      onTap: () {
-                        Get.toNamed('/place-details', arguments: place);
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: Row(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Container(
-                                width: 120,
-                                height: 100,
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).cardColor,
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: Theme.of(context).primaryColor,
-                                    width: 1,
+                return LazyLoadScrollView(
+                  onEndOfPage: controller.loadMorePlaces,
+                  isLoading: controller.isLoadingMore.value,
+
+                  child: ListView.builder(
+                    itemCount:
+                        controller.visiblePlaces.length +
+                        (controller.isLoadingMore.value ? 1 : 0),
+                    itemBuilder: (ctx, index) {
+                      if (index == controller.visiblePlaces.length) {
+                        return Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+                      final place = controller.visiblePlaces[index];
+                      return InkWell(
+                        onTap: () {
+                          Get.toNamed('/place-details', arguments: place);
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Row(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Container(
+                                  width: 120,
+                                  height: 100,
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).cardColor,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: Theme.of(context).primaryColor,
+                                      width: 1,
+                                    ),
                                   ),
                                 ),
                                 child: place.imageUrl != null &&
@@ -506,12 +520,95 @@ class HomeScreen extends StatelessWidget {
                                   ],
                                 ),
                               ),
-                            ),
-                          ],
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.only(right: 8.0),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        place.name ?? 'Unknown Place',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium
+                                            ?.copyWith(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        place.description ??
+                                            place.addressLine2 ??
+                                            'No description available.',
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodyMedium,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 6),
+                                      if (place.country != null ||
+                                          place.category != null)
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              Icons.location_on,
+                                              size: 14,
+                                              color: Theme.of(
+                                                context,
+                                              ).primaryColor,
+                                            ),
+                                            const SizedBox(width: 1),
+                                            Text(
+                                              place.country ?? 'Egypt',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall
+                                                  ?.copyWith(
+                                                    color: Theme.of(
+                                                      context,
+                                                    ).primaryColor,
+                                                  ),
+                                            ),
+                                            const SizedBox(width: 3),
+                                            Icon(
+                                              Icons.category,
+                                              size: 14,
+                                              color: Theme.of(
+                                                context,
+                                              ).primaryColor,
+                                            ),
+                                            const SizedBox(width: 2),
+                                            Expanded(
+                                              child: Text(
+                                                place.category ?? 'Place',
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodySmall
+                                                    ?.copyWith(
+                                                      color: Theme.of(
+                                                        context,
+                                                      ).primaryColor,
+                                                    ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 );
               }),
             ),
