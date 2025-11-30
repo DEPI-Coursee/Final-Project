@@ -47,9 +47,9 @@ void main() async {
   
   // Initialize WorkManager
   print('⏰ Initializing WorkManager...');
-  final workManager = WorkManagerService();
-  await workManager.initialize();
-  workManager.registerVisitListTask();
+  // final workManager = WorkManagerService();
+  // await workManager.initialize();
+  // workManager.registerVisitListTask();
 
   // Initialize Firebase
   try {

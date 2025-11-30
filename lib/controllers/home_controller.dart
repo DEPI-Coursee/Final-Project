@@ -339,6 +339,13 @@ class HomeController extends GetxController {
         quickList.add(place.copyWith(placeId: placeId));
       }
 
+      // Sort by distance from nearest to farthest
+      quickList.sort((a, b) {
+        final distanceA = a.distance ?? double.infinity;
+        final distanceB = b.distance ?? double.infinity;
+        return distanceA.compareTo(distanceB);
+      });
+
       places.value = quickList;
       allPlaces.value = quickList;
       print('✅ Found ${quickList.length} results for "$searchText"');
@@ -413,7 +420,17 @@ class HomeController extends GetxController {
       places.value = quickList;
       allPlaces.value = quickList;
 
-      places.shuffle();
+      // Sort by distance from nearest to farthest
+      places.sort((a, b) {
+        final distanceA = a.distance ?? double.infinity;
+        final distanceB = b.distance ?? double.infinity;
+        return distanceA.compareTo(distanceB);
+      });
+      allPlaces.sort((a, b) {
+        final distanceA = a.distance ?? double.infinity;
+        final distanceB = b.distance ?? double.infinity;
+        return distanceA.compareTo(distanceB);
+      });
 
       print('✅ Showing ${quickList.length} places (images loading in background)');
 
@@ -451,7 +468,14 @@ class HomeController extends GetxController {
   void loadInitialPlaces() {
     visiblePlaces.clear();
 
-    final listToLoad = places.value;
+    // Sort by distance at display time (nearest to farthest)
+    final listToLoad = List<PlaceModel>.from(places.value);
+    listToLoad.sort((a, b) {
+      final distanceA = a.distance ?? double.infinity;
+      final distanceB = b.distance ?? double.infinity;
+      return distanceA.compareTo(distanceB);
+    });
+
     final end = itemsPerPage > listToLoad.length
         ? listToLoad.length
         : itemsPerPage;
@@ -463,7 +487,14 @@ class HomeController extends GetxController {
   void loadMorePlaces() {
     if (isLoadingMore.value) return;
 
-    final listToLoad = places.value; // القائمة المفلترة
+    // Sort by distance at display time (nearest to farthest)
+    final listToLoad = List<PlaceModel>.from(places.value);
+    listToLoad.sort((a, b) {
+      final distanceA = a.distance ?? double.infinity;
+      final distanceB = b.distance ?? double.infinity;
+      return distanceA.compareTo(distanceB);
+    });
+
     if (currentOffset >= listToLoad.length) return;
 
     isLoadingMore.value = true;
@@ -725,14 +756,17 @@ class HomeController extends GetxController {
         return;
       }
 
-      final placeId = getPlaceId(place);
-      print('📝 Using place ID: $placeId');
+      // Always use generated format for consistency
+      final placeId = generateplaceid(place);
+      print('📝 Using normalized place ID: $placeId');
 
       await userService.addToFavorites(uid, placeId);
       print('✅ Added to Firebase');
 
-      if (!favoritePlaces.any((p) => getPlaceId(p) == placeId)) {
-        favoritePlaces.add(place);
+      // Update local list with normalized place
+      final normalizedPlace = place.copyWith(placeId: placeId);
+      if (!favoritePlaces.any((p) => generateplaceid(p) == placeId)) {
+        favoritePlaces.add(normalizedPlace);
       }
 
       Get.snackbar(
@@ -757,10 +791,10 @@ class HomeController extends GetxController {
       final uid = authService.getCurrentUserId();
       if (uid == null) return;
 
-      final placeId = getPlaceId(place);
+      final placeId = generateplaceid(place);
       await userService.removeFromFavorites(uid, placeId);
 
-      favoritePlaces.removeWhere((p) => getPlaceId(p) == placeId);
+      favoritePlaces.removeWhere((p) => generateplaceid(p) == placeId);
 
       print('✅ Removed from favorites');
 
@@ -780,8 +814,8 @@ class HomeController extends GetxController {
   }
 
   bool isFavorite(PlaceModel place) {
-    final placeId = getPlaceId(place);
-    return favoritePlaces.any((p) => getPlaceId(p) == placeId);
+    final placeId = generateplaceid(place);
+    return favoritePlaces.any((p) => generateplaceid(p) == placeId);
   }
 
   Future<PlaceModel> _parsePlaceFromId(String placeId) async {
@@ -789,6 +823,9 @@ class HomeController extends GetxController {
       throw Exception('Invalid placeId');
     }
 
+    print('🔄 Parsing place ID: $placeId');
+
+    // Try to parse as name-lat-lng format first
     if (placeId.contains('-') && placeId.split('-').length >= 3) {
       final parts = placeId.split('-');
       final lastPart = parts.last;
@@ -808,8 +845,6 @@ class HomeController extends GetxController {
           description = await wikiService.getSummary(name);
         } catch (_) {}
 
-        final placeId = '$name-$lat-$lng';
-
         return PlaceModel(
           name: name,
           latitude: lat,
@@ -821,7 +856,95 @@ class HomeController extends GetxController {
       }
     }
 
-    print('🆔 Parsed as Wikidata ID: $placeId');
+    // Try to parse as lat_lng format (fallback format)
+    if (placeId.contains('_') && placeId.split('_').length == 2) {
+      final parts = placeId.split('_');
+      final lat = double.tryParse(parts[0]);
+      final lng = double.tryParse(parts[1]);
+      
+      if (lat != null && lng != null) {
+        print('📍 Parsed as lat_lng format: ($lat, $lng)');
+        // Try to get place name from reverse geocoding or use coordinates
+        String? imageUrl;
+        String? description;
+        try {
+          // Try to get name from coordinates by searching nearby places
+          // Search nearby places to find a match
+          final nearbyPlaces = await placesService.getPlaces(
+            categories: categories,
+            longitude: lng,
+            latitude: lat,
+            radius: 100, // Very small radius to find exact match
+            limit: 1,
+          );
+          if (nearbyPlaces.isNotEmpty) {
+            final matchedPlace = nearbyPlaces.first;
+            if ((matchedPlace.latitude! - lat).abs() < 0.001 && 
+                (matchedPlace.longitude! - lng).abs() < 0.001) {
+              return matchedPlace.copyWith(placeId: placeId);
+            }
+          }
+        } catch (_) {}
+
+        return PlaceModel(
+          name: 'Location at $lat, $lng',
+          latitude: lat,
+          longitude: lng,
+          imageUrl: imageUrl,
+          description: description,
+          placeId: placeId,
+        );
+      }
+    }
+
+    // If it looks like a Geoapify place_id (UUID-like), try to find it
+    // Geoapify place_ids are typically long alphanumeric strings
+    if (placeId.length > 20 && !placeId.contains(' ')) {
+      print('🆔 Looks like Geoapify place_id, trying to find place...');
+      try {
+        // First, check if it's in the current places list (already loaded)
+        final existingPlace = places.firstWhere(
+          (p) => p.placeId == placeId,
+          orElse: () => PlaceModel(placeId: placeId),
+        );
+        
+        if (existingPlace.name != null && existingPlace.name!.isNotEmpty) {
+          print('✅ Found in current places list: ${existingPlace.name}');
+          return existingPlace;
+        }
+        
+        // If not found, try to search for it
+        try {
+          final location = await locationController.determinePosition();
+          // Search in a wider area to find the place
+          final searchedPlaces = await placesService.getPlaces(
+            categories: categories,
+            longitude: location.longitude,
+            latitude: location.latitude,
+            radius: radius,
+            limit: 100, // Search more places
+          );
+          
+          // Find the place with matching place_id
+          final matchedPlace = searchedPlaces.firstWhere(
+            (p) => p.placeId == placeId,
+            orElse: () => PlaceModel(placeId: placeId),
+          );
+          
+          if (matchedPlace.name != null && matchedPlace.name!.isNotEmpty) {
+            print('✅ Found matching place via search: ${matchedPlace.name}');
+            return matchedPlace;
+          }
+        } catch (e) {
+          print('⚠️ Could not get location for search: $e');
+        }
+      } catch (e) {
+        print('⚠️ Could not find place by ID: $e');
+      }
+    }
+
+    // Last resort: treat as Wikidata ID or use as name
+    print('🆔 Treating as Wikidata ID or name: $placeId');
 
     String? imageUrl;
     String? description;
@@ -829,6 +952,17 @@ class HomeController extends GetxController {
       imageUrl = await wikiService.getBestImageUrl(placeId);
       description = await wikiService.getSummary(placeId);
     } catch (_) {}
+
+    // If it's a very long string without spaces, it's likely an ID, not a name
+    if (placeId.length > 30 && !placeId.contains(' ')) {
+      return PlaceModel(
+        name: 'Unknown Place',
+        wikidataId: placeId,
+        imageUrl: imageUrl,
+        description: description,
+        placeId: placeId,
+      );
+    }
 
     return PlaceModel(
       name: placeId,
@@ -854,7 +988,8 @@ class HomeController extends GetxController {
         return;
       }
 
-      final placeId = getPlaceId(place);
+      // Always use generated format for consistency
+      final placeId = generateplaceid(place);
       print('📝 Using place ID: $placeId');
 
       await userService.addToVisitListWithDateTime(uid, placeId, visitDateTime);
@@ -866,8 +1001,10 @@ class HomeController extends GetxController {
         visitDateTime: visitDateTime,
       );
 
-      if (!visitListPlaces.any((p) => getPlaceId(p) == placeId)) {
-        visitListPlaces.add(place);
+      // Update local list with normalized place
+      final normalizedPlace = place.copyWith(placeId: placeId);
+      if (!visitListPlaces.any((p) => generateplaceid(p) == placeId)) {
+        visitListPlaces.add(normalizedPlace);
         visitListItemsWithDates[placeId] = visitDateTime;
       } else {
         visitListItemsWithDates[placeId] = visitDateTime;
@@ -955,12 +1092,12 @@ class HomeController extends GetxController {
   }
 
   DateTime? getVisitDateTime(PlaceModel place) {
-    final placeId = getPlaceId(place);
+    final placeId = generateplaceid(place);
     return visitListItemsWithDates[placeId];
   }
 
   bool isInVisitList(PlaceModel place) {
-    final placeId = getPlaceId(place);
+    final placeId = generateplaceid(place);
     return visitListItemsWithDates.containsKey(placeId);
   }
 
@@ -976,7 +1113,7 @@ class HomeController extends GetxController {
       await userService.removeFromVisitList(uid, placeId);
       await notificationService.cancelVisitReminderNotification(placeId);
 
-      visitListPlaces.removeWhere((p) => getPlaceId(p) == placeId);
+      visitListPlaces.removeWhere((p) => generateplaceid(p) == placeId);
       visitListItemsWithDates.remove(placeId);
 
       print('✅ Removed from visit list');

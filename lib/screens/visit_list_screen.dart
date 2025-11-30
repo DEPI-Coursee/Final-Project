@@ -17,7 +17,11 @@ class _VisitListScreenState extends State<VisitListScreen> {
     super.initState();
     // Refresh visit list when screen opens
     final controller = Get.find<HomeController>();
-    controller.fetchVisitListPlaces();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (controller.authService.isLoggedIn()) {
+        controller.fetchVisitListPlaces();
+      }
+    });
   }
 
   @override
@@ -25,127 +29,369 @@ class _VisitListScreenState extends State<VisitListScreen> {
     final controller = Get.find<HomeController>();
 
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        // title: const Text("Visit List"),
-        // centerTitle: true,
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Theme.of(context).scaffoldBackgroundColor,
-              Theme.of(context).scaffoldBackgroundColor.withOpacity(0.8),
-            ],
+        title: const Text(
+          'Visit List',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 24,
           ),
         ),
-        child: Obx(() {
-          if (controller.isVisitListLoading.value) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (controller.visitListPlaces.isEmpty) {
-            return Center(
+        centerTitle: false,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            onPressed: () {
+              if (controller.authService.isLoggedIn()) {
+                controller.fetchVisitListPlaces();
+              } else {
+                Get.snackbar(
+                  'Login Required',
+                  'Please login to view your visit list',
+                  snackPosition: SnackPosition.BOTTOM,
+                );
+                Get.toNamed('/login');
+              }
+            },
+            tooltip: 'Refresh',
+          ),
+        ],
+      ),
+      body: Obx(() {
+        // Check if user is logged in
+        if (!controller.authService.isLoggedIn()) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32.0),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.list_alt,
-                    size: 64,
-                    color: Theme.of(context).primaryColor.withOpacity(0.5),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Your visit list is empty',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Add places to your visit list to see them here',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return Scrollbar(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header section
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.list_alt,
-                        color: Theme.of(context).primaryColor,
-                        size: 24,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Visit List',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Plan your next adventures and track your travel goals',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontFamily: 'Caveat',
-                      color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.8),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  
-                  // Cards container
                   Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).cardColor.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: Theme.of(context).primaryColor.withOpacity(0.3),
-                        width: 1,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
+                      color: Theme.of(context).primaryColor.withOpacity(0.1),
+                      shape: BoxShape.circle,
                     ),
-                    child: GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: controller.visitListPlaces.length,
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 12.0,
-                        mainAxisSpacing: 12.0,
-                        childAspectRatio: 0.9,
+                    child: Icon(
+                      Icons.lock_outline_rounded,
+                      size: 80,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  Text(
+                    'Login Required',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Please login to view and manage your visit list',
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.7),
+                      height: 1.5,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 32),
+                  ElevatedButton.icon(
+                    onPressed: () => Get.toNamed('/login'),
+                    icon: const Icon(Icons.login_rounded),
+                    label: const Text('Login'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      itemBuilder: (context, index) {
-                        final place = controller.visitListPlaces[index];
-                        final visitDateTime = controller.getVisitDateTime(place);
-                        return _buildCard(context, place, visitDateTime, controller);
-                      },
                     ),
                   ),
                 ],
               ),
             ),
           );
-        }),
-      ),
+        }
+
+        if (controller.isVisitListLoading.value) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Theme.of(context).primaryColor,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Loading your visit list...',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.7),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // Error handling
+        if (controller.errorMessage.value.isNotEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.error_outline_rounded,
+                      size: 64,
+                      color: Colors.red.shade400,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Oops! Something went wrong',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    controller.errorMessage.value,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.7),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: () => controller.fetchVisitListPlaces(),
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text('Try Again'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // Error handling
+        if (controller.errorMessage.value.isNotEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.error_outline_rounded,
+                      size: 64,
+                      color: Colors.red.shade400,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Oops! Something went wrong',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    controller.errorMessage.value,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.7),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      if (controller.authService.isLoggedIn()) {
+                        controller.fetchVisitListPlaces();
+                      } else {
+                        Get.snackbar(
+                          'Login Required',
+                          'Please login to view your visit list',
+                          snackPosition: SnackPosition.BOTTOM,
+                        );
+                        Get.toNamed('/login');
+                      }
+                    },
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text('Try Again'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        if (controller.visitListPlaces.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.calendar_today_rounded,
+                      size: 80,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  Text(
+                    'Your Visit List is Empty',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Start planning your adventures!\nAdd places you want to visit and they\'ll appear here.',
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.7),
+                      height: 1.5,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 32),
+                  ElevatedButton.icon(
+                    onPressed: () => Get.toNamed('/home'),
+                    icon: const Icon(Icons.explore_rounded),
+                    label: const Text('Explore Places'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return CustomScrollView(
+          slivers: [
+            // Header Section
+            SliverToBoxAdapter(
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Theme.of(context).primaryColor,
+                            Theme.of(context).primaryColor.withOpacity(0.8),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Theme.of(context).primaryColor.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.event_note_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${controller.visitListPlaces.length} ${controller.visitListPlaces.length == 1 ? 'Place' : 'Places'}',
+                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 22,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Plan your next adventures',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // List of Places
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final place = controller.visitListPlaces[index];
+                    final visitDateTime = controller.getVisitDateTime(place);
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 20),
+                      child: _buildCard(context, place, visitDateTime, controller),
+                    );
+                  },
+                  childCount: controller.visitListPlaces.length,
+                ),
+              ),
+            ),
+            const SliverToBoxAdapter(
+              child: SizedBox(height: 20),
+            ),
+          ],
+        );
+      }),
     );
   }
 
@@ -161,202 +407,345 @@ class _VisitListScreenState extends State<VisitListScreen> {
       final amPm = date.hour < 12 ? 'AM' : 'PM';
       return '$hour:$minute $amPm';
     }
-    
-    return Card(
-      color: Theme.of(context).cardColor,
-      clipBehavior: Clip.antiAlias,
-      elevation: 4.0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 45,
-            child: place.imageUrl != null && place.imageUrl!.isNotEmpty
-                ? (place.imageUrl!.startsWith('assets/')
-                    ? Image.asset(
-                        place.imageUrl!,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        errorBuilder: (_, __, ___) => Container(
-                          color: Colors.grey,
-                          child: const Center(
-                            child: Icon(Icons.broken_image, size: 24, color: Colors.white70),
-                          ),
-                        ),
-                      )
-                    : Image.network(
-                        place.imageUrl!,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        errorBuilder: (_, __, ___) => Container(
-                          color: Colors.grey,
-                          child: const Center(
-                            child: Icon(Icons.broken_image, size: 24, color: Colors.white70),
-                          ),
-                        ),
-                      ))
-                : Container(
-                    color: Colors.grey.shade300,
-                    child: const Center(
-                      child: Icon(Icons.image_not_supported, size: 24, color: Colors.grey),
-                    ),
-                  ),
-          ),
-          Expanded(
-            flex: 55,
-            child: Padding(
-              padding: const EdgeInsets.all(4.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              place.name ?? 'Unknown Place',
-                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 2),
-                            if (place.addressLine2 != null)
-                              Row(
-                                children: [
-                                  const Icon(Icons.location_on, size: 8, color: Colors.grey),
-                                  const SizedBox(width: 2),
-                                  Expanded(
-                                    child: Text(
-                                      place.addressLine2!,
-                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                        fontSize: 8,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  if (visitDateTime != null) ...[
-                    Row(
-                      children: [
-                        Icon(Icons.calendar_today, size: 8, color: Theme.of(context).primaryColor),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            formatDate(visitDateTime),
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              fontSize: 8,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        Icon(Icons.access_time, size: 8, color: Theme.of(context).primaryColor),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            formatTime(visitDateTime),
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              fontSize: 8,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                  const Spacer(),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Status:',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              fontSize: 7,
-                            ),
-                          ),
-                          Text(
-                            visitDateTime != null && visitDateTime.isAfter(DateTime.now())
-                                ? 'Upcoming'
-                                : 'Past',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              fontSize: 8,
-                              fontWeight: FontWeight.bold,
-                              color: visitDateTime != null && visitDateTime.isAfter(DateTime.now())
-                                  ? Colors.green
-                                  : Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          ElevatedButton(
-                            onPressed: () {
-                              Get.toNamed('/place-details', arguments: place);
-                            },
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              minimumSize: Size.zero,
-                            ),
-                            child: Text(
-                              'Details',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 8,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: () async {
-                              await controller.removeFromVisitListWithDateTime(place);
-                            },
-                            icon: Icon(
-                              Icons.delete_outline,
-                              size: 16,
-                              color: Colors.red.shade300,
-                            ),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
-                            tooltip: 'Remove from visit list',
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+
+    final isUpcoming = visitDateTime != null && visitDateTime.isAfter(DateTime.now());
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+            spreadRadius: 0,
           ),
         ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => Get.toNamed('/place-details', arguments: place),
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Image Section with Gradient Overlay
+                ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                  child: Stack(
+                    children: [
+                      Container(
+                        height: 180,
+                        width: double.infinity,
+                        color: Colors.grey.shade300,
+                        child: place.imageUrl != null && place.imageUrl!.isNotEmpty
+                            ? (place.imageUrl!.startsWith('assets/')
+                                ? Image.asset(
+                                    place.imageUrl!,
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                    height: 180,
+                                    errorBuilder: (_, __, ___) => Container(
+                                      color: Colors.grey.shade300,
+                                      child: Icon(
+                                        Icons.broken_image_rounded,
+                                        size: 48,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                  )
+                                : Image.network(
+                                    place.imageUrl!,
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                    height: 180,
+                                    errorBuilder: (_, __, ___) => Container(
+                                      color: Colors.grey.shade300,
+                                      child: Icon(
+                                        Icons.broken_image_rounded,
+                                        size: 48,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                  ))
+                            : Container(
+                                color: Colors.grey.shade300,
+                                child: Icon(
+                                  Icons.image_not_supported_rounded,
+                                  size: 48,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                      ),
+                      // Gradient Overlay
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                Colors.black.withOpacity(0.3),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Status Badge on Image
+                      Positioned(
+                        top: 12,
+                        right: 12,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: isUpcoming
+                                ? Colors.green.withOpacity(0.8)
+                                : Colors.grey.withOpacity(0.9),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                isUpcoming ? 'Upcoming' : 'Past',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Content Section
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Place Name
+                      Text(
+                        place.name ?? 'Unknown Place',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          height: 1.2,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 12),
+                      // Address
+                      if (place.addressLine2 != null)
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.location_on_rounded,
+                              size: 16,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                place.addressLine2!,
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                                  fontSize: 13,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      if (visitDateTime != null) ...[
+                        const SizedBox(height: 16),
+                        // Date and Time Container
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Theme.of(context).primaryColor.withOpacity(0.1),
+                                Theme.of(context).primaryColor.withOpacity(0.05),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Theme.of(context).primaryColor.withOpacity(0.2),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).primaryColor.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  Icons.calendar_today_rounded,
+                                  size: 18,
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      formatDate(visitDateTime),
+                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                        color: Theme.of(context).primaryColor,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.access_time_rounded,
+                                          size: 12,
+                                          color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.6),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          formatTime(visitDateTime),
+                                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                      // Action Buttons
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton.icon(
+                            onPressed: () => Get.toNamed('/place-details', arguments: place),
+                            icon: Icon(
+                              Icons.arrow_forward_rounded,
+                              size: 18,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                            label: Text(
+                              'View Details',
+                              style: TextStyle(
+                                color: Theme.of(context).primaryColor,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.red.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: IconButton(
+                              onPressed: () async {
+                                if (!controller.authService.isLoggedIn()) {
+                                  Get.snackbar(
+                                    'Login Required',
+                                    'Please login to manage your visit list',
+                                    snackPosition: SnackPosition.BOTTOM,
+                                  );
+                                  Get.toNamed('/login');
+                                  return;
+                                }
+
+                                final confirm = await Get.dialog<bool>(
+                                  AlertDialog(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    title: const Text('Remove from Visit List'),
+                                    content: Text('Remove "${place.name}" from your visit list?'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Get.back(result: false),
+                                        child: const Text('Cancel'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () => Get.back(result: true),
+                                        style: TextButton.styleFrom(
+                                          foregroundColor: Colors.red,
+                                        ),
+                                        child: const Text('Remove'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (confirm == true) {
+                                  try {
+                                    await controller.removeFromVisitListWithDateTime(place);
+                                  } catch (e) {
+                                    Get.snackbar(
+                                      'Error',
+                                      'Failed to remove from visit list: $e',
+                                      snackPosition: SnackPosition.BOTTOM,
+                                    );
+                                  }
+                                }
+                              },
+                              icon: Icon(
+                                Icons.delete_outline_rounded,
+                                size: 20,
+                                color: Colors.red.shade400,
+                              ),
+                              tooltip: 'Remove',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

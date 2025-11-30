@@ -12,6 +12,7 @@ class PlaceModel {
   final String? imageUrl;
   final String? description;
   final String? placeId;
+  final double? distance;
 
 
   PlaceModel({
@@ -27,6 +28,7 @@ class PlaceModel {
     this.imageUrl,
     this.description,
     this.placeId,
+    this.distance,
   });
 
   factory PlaceModel.fromJson(Map<String, dynamic> json) {
@@ -52,6 +54,11 @@ class PlaceModel {
         properties['id'] as String? ??
         json['id'] as String?;
 
+    // Extract distance from the root level of the JSON response
+    // Distance can be at root level or in properties
+    final double? distance = (json['distance'] as num?)?.toDouble() ?? 
+                            (properties['distance'] as num?)?.toDouble();
+
     return PlaceModel(
       name: properties['name'] as String?,
       addressLine2: address,
@@ -68,6 +75,7 @@ class PlaceModel {
       imageUrl: null,
       description: null,
       placeId: placeId,
+      distance: distance,
     );
   }
 
@@ -84,6 +92,7 @@ class PlaceModel {
     String? category,
     String? type,
     String? placeId,
+    double? distance,
   }) {
     return PlaceModel(
       name: name ?? this.name,
@@ -98,6 +107,7 @@ class PlaceModel {
       imageUrl: imageUrl ?? this.imageUrl,
       description: description ?? this.description,
       placeId: placeId ?? this.placeId,
+      distance: distance ?? this.distance,
     );
   }
 
@@ -115,6 +125,7 @@ class PlaceModel {
       'imageUrl': imageUrl,
       'description': description,
       'placeId': placeId,
+      'distance': distance,
     };
   }
 }

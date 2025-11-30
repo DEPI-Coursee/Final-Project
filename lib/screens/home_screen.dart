@@ -348,7 +348,9 @@ class HomeScreen extends StatelessWidget {
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8.0),
                           child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              // ---- IMAGE ----
                               Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: Container(
@@ -362,243 +364,97 @@ class HomeScreen extends StatelessWidget {
                                       width: 1,
                                     ),
                                   ),
-                                ),
-                                child: place.imageUrl != null &&
-                                        place.imageUrl!.isNotEmpty
-                                    ? ClipRRect(
-                                        borderRadius: BorderRadius.circular(15),
-                                        child: place.imageUrl!.startsWith('assets/')
-                                            ? Builder(
-                                                builder: (context) {
-                                                  print('🖼️ Loading asset image: ${place.imageUrl} for ${place.name}');
-                                                  return Image.asset(
-                                                    place.imageUrl!,
-                                                    fit: BoxFit.cover,
-                                                    width: double.infinity,
-                                                    height: double.infinity,
-                                                    errorBuilder: (context, error, stackTrace) {
-                                                      print('❌ Error loading asset image: ${place.imageUrl}');
-                                                      print('Error: $error');
-                                                      return Container(
-                                                        color: Colors.grey.shade800,
-                                                        child: Center(
-                                                          child: Column(
-                                                            mainAxisAlignment: MainAxisAlignment.center,
-                                                            children: [
-                                                              const Icon(
-                                                                Icons.broken_image,
-                                                                size: 48,
-                                                                color: Colors.white70,
-                                                              ),
-                                                              const SizedBox(height: 8),
-                                                              Text(
-                                                                'Asset not found',
-                                                                style: TextStyle(
-                                                                  color: Colors.white70,
-                                                                  fontSize: 10,
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                      );
-                                                    },
-                                                  );
-                                                },
-                                              )
-                                            : CachedNetworkImage(
-                                                imageUrl: place.imageUrl!,
-                                                fit: BoxFit.cover,
-                                                width: double.infinity,
-                                                height: double.infinity,
-                                                placeholder: (context, url) =>
-                                                    Container(
-                                                  color: Colors.grey.shade800,
-                                                  child: Center(
-                                                    child: CircularProgressIndicator(
-                                                      strokeWidth: 2,
-                                                      valueColor:
-                                                          AlwaysStoppedAnimation<Color>(
-                                                        Colors.white54,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                                errorWidget: (context, url, error) =>
-                                                    const Center(
-                                                  child: Icon(
-                                                    Icons.broken_image,
-                                                    size: 48,
-                                                    color: Colors.white70,
-                                                  ),
-                                                ),
-                                              ),
-                                      )
-                                    : Container(
-                                        color: Colors.grey.shade800,
-                                        child: const Center(
-                                          child: Icon(
-                                            Icons.image,
-                                            size: 48,
-                                            color: Colors.white38,
-                                          ),
-                                        ),
+                                  child: place.imageUrl != null && place.imageUrl!.isNotEmpty
+                                      ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(15),
+                                    child: place.imageUrl!.startsWith('assets/')
+                                        ? Image.asset(
+                                      place.imageUrl!,
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                      errorBuilder: (context, error, stackTrace) =>
+                                      const Center(
+                                        child: Icon(Icons.broken_image,
+                                            color: Colors.white70, size: 40),
                                       ),
-                              ),
-                            ),
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.only(right: 8.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      place.name ?? 'Unknown Place',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleMedium
-                                          ?.copyWith(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
+                                    )
+                                        : CachedNetworkImage(
+                                      imageUrl: place.imageUrl!,
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                      placeholder: (context, url) =>
+                                      const Center(child: CircularProgressIndicator()),
+                                      errorWidget: (context, url, error) =>
+                                      const Icon(Icons.broken_image,
+                                          color: Colors.white70, size: 40),
                                     ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      // place.description ??
-                                          place.addressLine2 ??
-                                          'No description available.',
-                                      style:
-                                          Theme.of(context).textTheme.bodyMedium,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const SizedBox(height: 6),
-                                    if (place.country != null ||
-                                        place.category != null)
-                                      Row(
-                                        children: [
-                                          Icon(
-                                            Icons.location_on,
-                                            size: 14,
-                                            color:
-                                                Theme.of(context).primaryColor,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            place.country ?? 'Egypt',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodySmall
-                                                ?.copyWith(
-                                                  color: Theme.of(context)
-                                                      .primaryColor,
-                                                ),
-                                          ),
-                                          const SizedBox(width: 10),
-                                          Icon(
-                                            Icons.category,
-                                            size: 14,
-                                            color:
-                                                Theme.of(context).primaryColor,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            place.type ?? 'Place',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodySmall
-                                                ?.copyWith(
-                                                  color: Theme.of(context)
-                                                      .primaryColor,
-                                                ),
-                                          ),
-                                        ],
-                                      ),
-                                  ],
+                                  )
+                                      : const Center(
+                                    child: Icon(Icons.image,
+                                        size: 40, color: Colors.white38),
+                                  ),
                                 ),
                               ),
+
+                              // ---- TEXT INFO ----
                               Expanded(
                                 child: Padding(
                                   padding: const EdgeInsets.only(right: 8.0),
                                   child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const SizedBox(height: 4),
+                                      // NAME
                                       Text(
                                         place.name ?? 'Unknown Place',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium
-                                            ?.copyWith(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                       const SizedBox(height: 6),
+
+                                      // DESCRIPTION
                                       Text(
                                         place.description ??
                                             place.addressLine2 ??
                                             'No description available.',
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.bodyMedium,
+                                        style: Theme.of(context).textTheme.bodyMedium,
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                       const SizedBox(height: 6),
-                                      if (place.country != null ||
-                                          place.category != null)
-                                        Row(
-                                          children: [
-                                            Icon(
-                                              Icons.location_on,
-                                              size: 14,
-                                              color: Theme.of(
-                                                context,
-                                              ).primaryColor,
+
+                                      // COUNTRY + CATEGORY
+                                      Row(
+                                        children: [
+                                          Icon(Icons.location_on,
+                                              size: 14, color: Theme.of(context).primaryColor),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            place.country ?? 'Egypt',
+                                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                              color: Theme.of(context).primaryColor,
                                             ),
-                                            const SizedBox(width: 1),
-                                            Text(
-                                              place.country ?? 'Egypt',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodySmall
-                                                  ?.copyWith(
-                                                    color: Theme.of(
-                                                      context,
-                                                    ).primaryColor,
-                                                  ),
-                                            ),
-                                            const SizedBox(width: 3),
-                                            Icon(
-                                              Icons.category,
-                                              size: 14,
-                                              color: Theme.of(
-                                                context,
-                                              ).primaryColor,
-                                            ),
-                                            const SizedBox(width: 2),
-                                            Expanded(
-                                              child: Text(
-                                                place.category ?? 'Place',
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodySmall
-                                                    ?.copyWith(
-                                                      color: Theme.of(
-                                                        context,
-                                                      ).primaryColor,
-                                                    ),
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Icon(Icons.category,
+                                              size: 14, color: Theme.of(context).primaryColor),
+                                          const SizedBox(width: 4),
+                                          Expanded(
+                                            child: Text(
+                                               place.type ?? 'Place',
+                                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                color: Theme.of(context).primaryColor,
                                               ),
+                                              overflow: TextOverflow.ellipsis,
                                             ),
-                                          ],
-                                        ),
+                                          ),
+                                        ],
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -607,6 +463,7 @@ class HomeScreen extends StatelessWidget {
                           ),
                         ),
                       );
+
                     },
                   ),
                 );

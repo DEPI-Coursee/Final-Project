@@ -406,6 +406,8 @@ class _PlaceDetailsState extends State<PlaceDetails> {
   }
 
   Future<void> _showDateTimePicker(BuildContext context, PlaceModel place) async {
+    final theme = Theme.of(context);
+    
     // Pick date
     final DateTime? pickedDate = await showDatePicker(
       context: context,
@@ -413,6 +415,19 @@ class _PlaceDetailsState extends State<PlaceDetails> {
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
       helpText: 'Select Visit Date',
+      builder: (context, child) {
+        return Theme(
+          data: theme.copyWith(
+            colorScheme: theme.colorScheme.copyWith(
+              primary: theme.primaryColor,
+              onPrimary: theme.colorScheme.onSurface,
+              surface: theme.cardColor,
+              onSurface: theme.colorScheme.onSurface,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (pickedDate == null) return; // User cancelled date picker
@@ -422,6 +437,19 @@ class _PlaceDetailsState extends State<PlaceDetails> {
       context: context,
       initialTime: TimeOfDay.now(),
       helpText: 'Select Visit Time',
+      builder: (context, child) {
+        return Theme(
+          data: theme.copyWith(
+            colorScheme: theme.colorScheme.copyWith(
+              primary: theme.primaryColor,
+              onPrimary: theme.colorScheme.onSurface,
+              surface: theme.cardColor,
+              onSurface: theme.colorScheme.onSurface,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (pickedTime == null) return; // User cancelled time picker
