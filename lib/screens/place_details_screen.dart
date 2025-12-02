@@ -108,7 +108,17 @@ class _PlaceDetailsState extends State<PlaceDetails> {
     // If place is null, show loading/error state
     if (place == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Place Details')),
+        appBar: AppBar(
+          title: const Text('Place Details'),
+        leading:IconButton(  
+              icon: const Icon(Icons.home),
+              tooltip: 'Home',         
+           onPressed: () => Get.offAllNamed('/home'),
+        
+
+            ),
+        ),
+        
         body: const Center(
           child: CircularProgressIndicator(),
         ),
@@ -116,7 +126,14 @@ class _PlaceDetailsState extends State<PlaceDetails> {
     }
     
     return Scaffold(
-      appBar: AppBar(title: Text('Place Details')),
+      appBar: AppBar(
+        title: const Text('Place Details'),
+        leading: IconButton(
+          icon: const Icon(Icons.home),
+          tooltip: 'Home',
+          onPressed: () => Get.offAllNamed('/home'),
+        ),
+     ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Card(
