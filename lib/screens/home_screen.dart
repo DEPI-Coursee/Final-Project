@@ -7,6 +7,8 @@ import 'package:tour_guide/screens/favorits_screen.dart';
 import 'package:tour_guide/screens/visit_list_screen.dart';
 import '../controllers/home_controller.dart';
 import '../controllers/theme_controller.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 
 class HomeScreen extends StatelessWidget {
   HomeScreen({super.key});
@@ -115,11 +117,7 @@ class HomeScreen extends StatelessWidget {
                 }
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('Settings'),
-              onTap: () {},
-            ),
+           
             const Divider(),
             // Obx(() => ListTile(
             //   leading: Icon(
@@ -134,19 +132,47 @@ class HomeScreen extends StatelessWidget {
             //   },
             // )),
             // const Divider(),
-            ListTile(
-              leading: const Icon(Icons.logout, color: Colors.grey),
-              title: const Text('Logout'),
-              onTap: () async {
-                final success = await controller.authService.signOut();
-                if (success) {
-                  Get.offNamed('/login');
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Logout failed. Try again.')),
-                  );
-                }
-              },
+            // ListTile(
+            //   leading: const Icon(Icons.logout, color: Colors.grey),
+            //   title: const Text('Login'),
+            //   onTap: () async {
+            //     final success = await controller.authService.signOut();
+            //     if (success) {
+            //       Get.offNamed('/login');
+
+            //     } else {
+            //       ScaffoldMessenger.of(context).showSnackBar(
+            //         const SnackBar(content: Text('Logout failed. Try again.')),
+            //       );
+            //     }
+            //   },
+            // ),
+            StreamBuilder<User?>(
+              stream:FirebaseAuth.instance.authStateChanges() ,
+            builder: (context, snapshot) {
+              final loggedIn=snapshot.hasData;
+              return ListTile(
+                leading: Icon(
+                  loggedIn ? Icons.logout : Icons.login,
+                  color: Colors.grey,
+                ),
+                title: Text(loggedIn ? 'Logout' : 'Login'),
+                onTap: () async {
+                  if (loggedIn) {
+                    final success = await controller.authService.signOut();
+                    if (success) {
+                      Get.offNamed('/login');
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Logout failed. Try again.')),
+                      );
+                    }
+                  } else {
+                    Get.toNamed('/login');
+                  }
+                },
+              );
+            },
             ),
           ],
         ),
