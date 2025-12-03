@@ -8,7 +8,7 @@ import 'package:tour_guide/internet_middleware.dart';
 import 'package:tour_guide/screens/getStrated_screen.dart';
 import 'package:tour_guide/screens/home_screen.dart';
 import 'package:tour_guide/controllers/home_controller.dart';
-import 'package:tour_guide/screens/offline_details.dart';
+import 'package:tour_guide/screens/offline_page.dart';
 import 'package:tour_guide/screens/splash_screen.dart';
 import 'package:tour_guide/screens/login_screen.dart';
 import 'package:tour_guide/screens/register_screen.dart';

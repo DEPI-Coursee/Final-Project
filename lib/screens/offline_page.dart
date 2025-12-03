@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:tour_guide/controllers/connection_controller.dart';
 import 'package:tour_guide/screens/offline_details.dart';
 import '../models/offline_places_model.dart';
 
@@ -66,7 +68,25 @@ class OfflinePlacesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ Check for internet connection restoration (only on native platforms)
+    if (!GetPlatform.isWeb) {
+      final connectionController = Get.find<ConnectionController>();
+
+      Future.microtask(() async {
+        try {
+          final hasInternet = await connectionController.hasInternet();
+          if (hasInternet && Get.currentRoute == '/offline-page') {
+            print('🌐 Connection restored on offline page - going back to /home');
+            Get.offAllNamed('/home');
+          }
+        } catch (_) {
+          // If anything goes wrong here, just stay on offline page.
+        }
+      });
+    }
+
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text(
           "Offline Places",
@@ -75,96 +95,161 @@ class OfflinePlacesScreen extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
+        elevation: 0,
       ),
 
-      body: GridView.builder(
-        padding: const EdgeInsets.all(12),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 0.75, // ✅ FIXED: Increased from 0.65 to make cards shorter
-        ),
-        itemCount: offlinePlaces.length,
-        itemBuilder: (context, index) {
-          final place = offlinePlaces[index];
-
-          return Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              color: Theme.of(context).cardColor,
-              boxShadow: const [
-                BoxShadow(
-                  blurRadius: 6,
-                  color: Colors.black26,
-                )
-              ],
-            ),
-            child: InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => OfflinePlaceDetailScreen(place: place),
-                  ),
-                );
-              },
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // IMAGE
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
-                    child: Image.asset(
-                      place.imagePath,
-                      height: 100, // Reduced from 120 to give more space for text
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-
-                  // INFO
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          place.name,
-                          maxLines: 1, // Changed from 2 to 1 to save space
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14, // Reduced from 15
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          place.country,
-                          style: TextStyle(
-                            color: Theme.of(context).primaryColor,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          place.shortdescription ?? "",
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 11,
-                             fontWeight: FontWeight.w500,
-                            color: Colors.white, // Light color for dark background
-                          ),
-                        ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          // Calculate card width for 2 columns with spacing
+          final cardWidth = (constraints.maxWidth - 36) / 2; // 12 padding on each side + 12 spacing between
+          
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(12),
+            child: Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: offlinePlaces.map((place) {
+                return SizedBox(
+                  width: cardWidth,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(18),
+                      color: Theme.of(context).cardColor,
+                      boxShadow: [
+                        BoxShadow(
+                          blurRadius: 6,
+                          color: Colors.black.withOpacity(0.08),
+                          offset: const Offset(0, 2),
+                        )
                       ],
                     ),
-                  )
-                ],
-              ),
+                    child: InkWell(
+                      onTap: () {
+                        // ✅ Use GetX navigation instead of Navigator
+                        Get.to(() => OfflinePlaceDetailScreen(place: place));
+                      },
+                      borderRadius: BorderRadius.circular(18),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // IMAGE - Fixed height for consistency
+                          ClipRRect(
+                            borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+                            child: Image.asset(
+                              place.imagePath,
+                              width: cardWidth,
+                              height: cardWidth * 0.75, // Maintain aspect ratio
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  width: cardWidth,
+                                  height: cardWidth * 0.75,
+                                  color: Colors.grey.shade300,
+                                  child: Icon(
+                                    Icons.broken_image,
+                                    size: 32,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+
+                          // INFO - Sizes to content
+                          Padding(
+                            padding: const EdgeInsets.all(10.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  place.name,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  place.country,
+                                  style: TextStyle(
+                                    color: Theme.of(context).primaryColor,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  place.shortdescription ?? "",
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
           );
         },
+      ),
+
+      // Offline banner + manual "Retry" button
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                "You're offline — showing saved places",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).primaryColor,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () async {
+                  final connectionController = Get.find<ConnectionController>();
+                  final hasInternet = await connectionController.hasInternet();
+                  if (hasInternet) {
+                    print('🌐 Retry from offline page: internet available, going to /home');
+                    Get.offAllNamed('/home');
+                  } else {
+                    Get.snackbar(
+                      'Still offline',
+                      'Check your internet connection and try again.',
+                      snackPosition: SnackPosition.BOTTOM,
+                    );
+                  }
+                },
+                child: const Text('Retry online'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
