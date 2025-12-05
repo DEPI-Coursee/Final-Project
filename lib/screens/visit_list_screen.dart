@@ -359,7 +359,8 @@ class _VisitListScreenState extends State<VisitListScreen> {
                             'Plan your next adventures',
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
-                              fontSize: 14,
+                              fontSize: 18,
+                              fontFamily: 'Caveat',
                             ),
                           ),
                         ],
@@ -445,7 +446,7 @@ class _VisitListScreenState extends State<VisitListScreen> {
                   child: Stack(
                     children: [
                       Container(
-                        height: 180,
+                        height: 130,
                         width: double.infinity,
                         color: Colors.grey.shade300,
                         child: place.imageUrl != null && place.imageUrl!.isNotEmpty

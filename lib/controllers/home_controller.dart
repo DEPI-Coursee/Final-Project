@@ -727,11 +727,27 @@ class HomeController extends GetxController {
 
       final List<PlaceModel> loadedPlaces = [];
 
-      for (String placeId in user.favoritePlaces!) {
-        print('🔄 Parsing place: $placeId');
-        PlaceModel place = await _parsePlaceFromId(placeId);
-        loadedPlaces.add(place);
-        print('✅ Place parsed: ${place.name}');
+      // Try to load from new data structure first (with full place data)
+      if (user.favoritePlacesData != null && user.favoritePlacesData!.isNotEmpty) {
+        print('📦 Loading favorites from full data structure');
+        for (var placeData in user.favoritePlacesData!) {
+          try {
+            final place = PlaceModel.fromStoredJson(placeData);
+            loadedPlaces.add(place);
+            print('✅ Loaded place from Firebase: ${place.name} (image: ${place.imageUrl != null ? "yes" : "no"})');
+          } catch (e) {
+            print('⚠️ Error parsing place data: $e');
+          }
+        }
+      } else if (user.favoritePlaces != null && user.favoritePlaces!.isNotEmpty) {
+        // Fallback to legacy structure (parse from IDs)
+        print('📦 Loading favorites from legacy structure (parsing IDs)');
+        for (String placeId in user.favoritePlaces!) {
+          print('🔄 Parsing place: $placeId');
+          PlaceModel place = await _parsePlaceFromId(placeId);
+          loadedPlaces.add(place);
+          print('✅ Place parsed: ${place.name}');
+        }
       }
 
       favoritePlaces.value = loadedPlaces;
@@ -760,11 +776,37 @@ class HomeController extends GetxController {
       final placeId = generateplaceid(place);
       print('📝 Using normalized place ID: $placeId');
 
-      await userService.addToFavorites(uid, placeId);
-      print('✅ Added to Firebase');
+      // Ensure place has the normalized placeId
+      PlaceModel normalizedPlace = place.copyWith(placeId: placeId);
+      
+      // Fetch image if missing before saving
+      if (normalizedPlace.imageUrl == null || normalizedPlace.imageUrl!.isEmpty) {
+        print('📸 Fetching image for ${normalizedPlace.name}...');
+        try {
+          final String? queryId = normalizedPlace.wikidataId ?? normalizedPlace.name;
+          if (queryId != null && queryId.isNotEmpty) {
+            final imageUrl = await wikiService.getBestImageUrl(queryId);
+            if (imageUrl != null && imageUrl.isNotEmpty) {
+              normalizedPlace = normalizedPlace.copyWith(imageUrl: imageUrl);
+              print('✅ Image fetched: $imageUrl');
+            } else {
+              // Try category image as fallback
+              normalizedPlace = putCategoryImage(normalizedPlace);
+            }
+          }
+        } catch (e) {
+          print('⚠️ Error fetching image: $e');
+          // Try category image as fallback
+          normalizedPlace = putCategoryImage(normalizedPlace);
+        }
+      }
+      
+      // Save full place data to Firebase (including imageUrl)
+      final placeData = normalizedPlace.toJson();
+      await userService.addToFavoritesWithData(uid, placeData);
+      print('✅ Added to Firebase with full data (image: ${normalizedPlace.imageUrl != null ? "yes" : "no"})');
 
-      // Update local list with normalized place
-      final normalizedPlace = place.copyWith(placeId: placeId);
+      // Update local list
       if (!favoritePlaces.any((p) => generateplaceid(p) == placeId)) {
         favoritePlaces.add(normalizedPlace);
       }
@@ -992,8 +1034,35 @@ class HomeController extends GetxController {
       final placeId = generateplaceid(place);
       print('📝 Using place ID: $placeId');
 
-      await userService.addToVisitListWithDateTime(uid, placeId, visitDateTime);
-      print('✅ Added to Firebase');
+      // Ensure place has the normalized placeId
+      PlaceModel normalizedPlace = place.copyWith(placeId: placeId);
+      
+      // Fetch image if missing before saving
+      if (normalizedPlace.imageUrl == null || normalizedPlace.imageUrl!.isEmpty) {
+        print('📸 Fetching image for ${normalizedPlace.name}...');
+        try {
+          final String? queryId = normalizedPlace.wikidataId ?? normalizedPlace.name;
+          if (queryId != null && queryId.isNotEmpty) {
+            final imageUrl = await wikiService.getBestImageUrl(queryId);
+            if (imageUrl != null && imageUrl.isNotEmpty) {
+              normalizedPlace = normalizedPlace.copyWith(imageUrl: imageUrl);
+              print('✅ Image fetched: $imageUrl');
+            } else {
+              // Try category image as fallback
+              normalizedPlace = putCategoryImage(normalizedPlace);
+            }
+          }
+        } catch (e) {
+          print('⚠️ Error fetching image: $e');
+          // Try category image as fallback
+          normalizedPlace = putCategoryImage(normalizedPlace);
+        }
+      }
+      
+      // Save full place data to Firebase (including imageUrl)
+      final placeData = normalizedPlace.toJson();
+      await userService.addToVisitListWithData(uid, placeData, visitDateTime);
+      print('✅ Added to Firebase with full data (image: ${normalizedPlace.imageUrl != null ? "yes" : "no"})');
 
       await notificationService.scheduleVisitReminderNotification(
         placeId: placeId,
@@ -1001,8 +1070,7 @@ class HomeController extends GetxController {
         visitDateTime: visitDateTime,
       );
 
-      // Update local list with normalized place
-      final normalizedPlace = place.copyWith(placeId: placeId);
+      // Update local list
       if (!visitListPlaces.any((p) => generateplaceid(p) == placeId)) {
         visitListPlaces.add(normalizedPlace);
         visitListItemsWithDates[placeId] = visitDateTime;
@@ -1069,15 +1137,45 @@ class HomeController extends GetxController {
       final List<PlaceModel> loadedPlaces = [];
       final Map<String, DateTime> datesMap = {};
 
-      for (var entry in user.visitListItems!.entries) {
-        final placeId = entry.key;
-        final visitDateTime = entry.value;
+      // Try to load from new data structure first (with full place data)
+      if (user.visitListItemsData != null && user.visitListItemsData!.isNotEmpty) {
+        print('📦 Loading visit list from full data structure');
+        for (var entry in user.visitListItemsData!.entries) {
+          final placeId = entry.key;
+          final placeDataWithDate = entry.value;
+          
+          try {
+            // Extract visitDateTime from the data
+            final visitDateTimeStr = placeDataWithDate['visitDateTime'] as String?;
+            if (visitDateTimeStr != null) {
+              final visitDateTime = DateTime.parse(visitDateTimeStr);
+              datesMap[placeId] = visitDateTime;
+            }
+            
+            // Create PlaceModel from the stored data (remove visitDateTime from place data)
+            final placeData = Map<String, dynamic>.from(placeDataWithDate);
+            placeData.remove('visitDateTime');
+            
+            final place = PlaceModel.fromStoredJson(placeData);
+            loadedPlaces.add(place);
+            print('✅ Loaded place from Firebase: ${place.name} (image: ${place.imageUrl != null ? "yes" : "no"})');
+          } catch (e) {
+            print('⚠️ Error parsing visit list place data: $e');
+          }
+        }
+      } else if (user.visitListItems != null && user.visitListItems!.isNotEmpty) {
+        // Fallback to legacy structure (parse from IDs)
+        print('📦 Loading visit list from legacy structure (parsing IDs)');
+        for (var entry in user.visitListItems!.entries) {
+          final placeId = entry.key;
+          final visitDateTime = entry.value;
 
-        print('🔄 Parsing place: $placeId');
-        PlaceModel place = await _parsePlaceFromId(placeId);
-        loadedPlaces.add(place);
-        datesMap[placeId] = visitDateTime;
-        print('✅ Place parsed: ${place.name}');
+          print('🔄 Parsing place: $placeId');
+          PlaceModel place = await _parsePlaceFromId(placeId);
+          loadedPlaces.add(place);
+          datesMap[placeId] = visitDateTime;
+          print('✅ Place parsed: ${place.name}');
+        }
       }
 
       visitListPlaces.value = loadedPlaces;

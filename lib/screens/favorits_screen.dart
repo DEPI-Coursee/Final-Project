@@ -231,7 +231,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                             'Your saved destinations',
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
-                              fontSize: 14,
+                              fontSize: 20,
+                              fontFamily: 'Caveat',
                             ),
                           ),
                         ],
@@ -316,7 +317,7 @@ class DestinationCard extends StatelessWidget {
                   child: Stack(
                     children: [
                       Container(
-                        height: 180,
+                        height: 150,
                         width: double.infinity,
                         color: Colors.grey.shade300,
                         child: place.imageUrl != null && place.imageUrl!.isNotEmpty

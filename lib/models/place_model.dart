@@ -128,4 +128,23 @@ class PlaceModel {
       'distance': distance,
     };
   }
+
+  // Create PlaceModel from stored JSON (simpler format, not API response)
+  factory PlaceModel.fromStoredJson(Map<String, dynamic> json) {
+    return PlaceModel(
+      name: json['name'] as String?,
+      addressLine2: json['addressLine2'] as String?,
+      longitude: (json['longitude'] as num?)?.toDouble(),
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      wikipediaUrl: json['wikipediaUrl'] as String?,
+      wikidataId: json['wikidataId'] as String?,
+      country: json['country'] as String?,
+      category: json['category'] as String?,
+      type: json['type'] as String?,
+      imageUrl: json['imageUrl'] as String?,
+      description: json['description'] as String?,
+      placeId: json['placeId'] as String?,
+      distance: (json['distance'] as num?)?.toDouble(),
+    );
+  }
 }

@@ -189,7 +189,7 @@ class HomeScreen extends StatelessWidget {
                   Text(
                     'Let\'s find the perfect place for you',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontSize: 20,
+                      fontSize: 18,
                       fontFamily: 'Caveat',
                     ),
                   ),

@@ -6,8 +6,10 @@ class Usermodel {
   final String? password;
   final double? currentLat;
   final double? currentLng;
-  final List<String>? favoritePlaces;
-  final Map<String, DateTime>? visitListItems; // Map of placeId -> visitDateTime
+  final List<String>? favoritePlaces; // Legacy: kept for backward compatibility
+  final List<Map<String, dynamic>>? favoritePlacesData; // New: full place data
+  final Map<String, DateTime>? visitListItems; // Legacy: Map of placeId -> visitDateTime
+  final Map<String, Map<String, dynamic>>? visitListItemsData; // New: Map of placeId -> {placeData, visitDateTime}
 
 
   Usermodel({
@@ -18,7 +20,9 @@ class Usermodel {
     this.currentLat,
     this.currentLng,
     this.favoritePlaces,
+    this.favoritePlacesData,
     this.visitListItems,
+    this.visitListItemsData,
   });
 
   // Convert UserModel to Map for Firestore
@@ -31,14 +35,24 @@ class Usermodel {
       );
     }
     
+    // Convert visitListItemsData to JSON
+    Map<String, dynamic>? visitListItemsDataJson;
+    if (visitListItemsData != null) {
+      visitListItemsDataJson = visitListItemsData!.map(
+        (key, value) => MapEntry(key, value)
+      );
+    }
+    
     return {
       'uid': uid,
       'fullName': fullName,
       'email': email,
       'currentLat': currentLat,
       'currentLng': currentLng,
-      'favoritePlaces': favoritePlaces ?? [],
-      'visitListItems': visitListItemsJson ?? {},
+      'favoritePlaces': favoritePlaces ?? [], // Legacy
+      'favoritePlacesData': favoritePlacesData ?? [], // New
+      'visitListItems': visitListItemsJson ?? {}, // Legacy
+      'visitListItemsData': visitListItemsDataJson ?? {}, // New
       // Note: password is not saved to Firestore for security
     };
   }
@@ -56,6 +70,24 @@ class Usermodel {
       );
     }
 
+    // Parse visitListItemsData
+    Map<String, Map<String, dynamic>>? visitListItemsData;
+    if (json['visitListItemsData'] != null) {
+      final items = json['visitListItemsData'] as Map;
+      visitListItemsData = items.map(
+        (key, value) => MapEntry(
+          key as String,
+          value as Map<String, dynamic>
+        )
+      );
+    }
+
+    // Parse favoritePlacesData
+    List<Map<String, dynamic>>? favoritePlacesData;
+    if (json['favoritePlacesData'] != null) {
+      favoritePlacesData = List<Map<String, dynamic>>.from(json['favoritePlacesData'] as List);
+    }
+
     return Usermodel(
       uid: json['uid'] as String,
       fullName: json['fullName'] as String?,
@@ -65,7 +97,9 @@ class Usermodel {
       favoritePlaces: json['favoritePlaces'] != null 
           ? List<String>.from(json['favoritePlaces'] as List)
           : [],
+      favoritePlacesData: favoritePlacesData,
       visitListItems: visitListItems,
+      visitListItemsData: visitListItemsData,
     );
   }
 
@@ -76,7 +110,9 @@ class Usermodel {
     double? currentLat,
     double? currentLng,
     List<String>? favoritePlaces,
+    List<Map<String, dynamic>>? favoritePlacesData,
     Map<String, DateTime>? visitListItems,
+    Map<String, Map<String, dynamic>>? visitListItemsData,
   }) {
     return Usermodel(
       uid: uid,
@@ -85,7 +121,9 @@ class Usermodel {
       currentLat: currentLat ?? this.currentLat,
       currentLng: currentLng ?? this.currentLng,
       favoritePlaces: favoritePlaces ?? this.favoritePlaces,
+      favoritePlacesData: favoritePlacesData ?? this.favoritePlacesData,
       visitListItems: visitListItems ?? this.visitListItems,
+      visitListItemsData: visitListItemsData ?? this.visitListItemsData,
     );
   }
 }
