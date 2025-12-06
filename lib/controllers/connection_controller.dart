@@ -185,8 +185,8 @@ class ConnectionController extends GetxController {
     }
     
     Get.snackbar(
-      'Connected',
-      'You are back online',
+      'connected'.tr,
+      'youAreBackOnline'.tr,
       snackPosition: SnackPosition.BOTTOM,
       backgroundColor: Colors.green,
       colorText: Colors.white,
@@ -202,8 +202,8 @@ class ConnectionController extends GetxController {
     }
     
     Get.snackbar(
-      'No Connection',
-      'You are offline',
+      'noConnection'.tr,
+      'youAreOffline'.tr,
       snackPosition: SnackPosition.BOTTOM,
       backgroundColor: Colors.red,
       colorText: Colors.white,

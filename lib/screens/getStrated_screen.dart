@@ -35,7 +35,7 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
                     RichText(
                       textAlign: TextAlign.center,
                       text: TextSpan(
-                        text: "Simple way to\nsee the world",
+                        text: "simpleWayToSeeTheWorld".tr,
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 36,
@@ -60,8 +60,7 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
                     const SizedBox(height: 16),
 
                     // Description text
-                    Text(
-                      "We are the best rated travel agency of 2022 in the world, explore our services.",
+                    Text("weAreTheBestRatedTravelAgencyOf2022InTheWorld".tr,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.white,
@@ -100,7 +99,7 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              "Get Started",
+                              "getStarted".tr,
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,

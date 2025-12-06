@@ -31,8 +31,8 @@ class _VisitListScreenState extends State<VisitListScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
-          'Visit List',
+        title: Text(
+          'visitList'.tr,
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 24,
@@ -48,14 +48,14 @@ class _VisitListScreenState extends State<VisitListScreen> {
                 controller.fetchVisitListPlaces();
               } else {
                 Get.snackbar(
-                  'Login Required',
-                  'Please login to view your visit list',
+                  'loginRequired'.tr,
+                  'pleaseLoginToViewYourVisitList'.tr,
                   snackPosition: SnackPosition.BOTTOM,
                 );
                 Get.toNamed('/login');
               }
             },
-            tooltip: 'Refresh',
+            tooltip: 'refresh'.tr,
           ),
         ],
       ),
@@ -82,7 +82,7 @@ class _VisitListScreenState extends State<VisitListScreen> {
                   ),
                   const SizedBox(height: 32),
                   Text(
-                    'Login Required',
+                    'loginRequired'.tr,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -90,7 +90,7 @@ class _VisitListScreenState extends State<VisitListScreen> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Please login to view and manage your visit list',
+                    'pleaseLoginToViewAndManageYourVisitList'.tr,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.7),
                       height: 1.5,
@@ -101,7 +101,7 @@ class _VisitListScreenState extends State<VisitListScreen> {
                   ElevatedButton.icon(
                     onPressed: () => Get.toNamed('/login'),
                     icon: const Icon(Icons.login_rounded),
-                    label: const Text('Login'),
+                    label: Text('login'.tr),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                       shape: RoundedRectangleBorder(
@@ -127,7 +127,7 @@ class _VisitListScreenState extends State<VisitListScreen> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Loading your visit list...',
+                  'loadingYourVisitList'.tr,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.7),
                   ),
@@ -159,7 +159,7 @@ class _VisitListScreenState extends State<VisitListScreen> {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'Oops! Something went wrong',
+                    'oopsSomethingWentWrong'.tr,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -177,7 +177,7 @@ class _VisitListScreenState extends State<VisitListScreen> {
                   ElevatedButton.icon(
                     onPressed: () => controller.fetchVisitListPlaces(),
                     icon: const Icon(Icons.refresh_rounded),
-                    label: const Text('Try Again'),
+                    label: Text('tryAgain'.tr),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                       shape: RoundedRectangleBorder(
@@ -213,7 +213,7 @@ class _VisitListScreenState extends State<VisitListScreen> {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'Oops! Something went wrong',
+                      'oopsSomethingWentWrong'.tr,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -234,15 +234,15 @@ class _VisitListScreenState extends State<VisitListScreen> {
                         controller.fetchVisitListPlaces();
                       } else {
                         Get.snackbar(
-                          'Login Required',
-                          'Please login to view your visit list',
+                          'loginRequired'.tr,
+                          'pleaseLoginToViewYourVisitList'.tr,
                           snackPosition: SnackPosition.BOTTOM,
                         );
                         Get.toNamed('/login');
                       }
                     },
                     icon: const Icon(Icons.refresh_rounded),
-                    label: const Text('Try Again'),
+                    label: Text('tryAgain'.tr),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                       shape: RoundedRectangleBorder(
@@ -277,7 +277,7 @@ class _VisitListScreenState extends State<VisitListScreen> {
                   ),
                   const SizedBox(height: 32),
                   Text(
-                    'Your Visit List is Empty',
+                    'yourVisitListIsEmpty'.tr,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -285,7 +285,7 @@ class _VisitListScreenState extends State<VisitListScreen> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Start planning your adventures!\nAdd places you want to visit and they\'ll appear here.',
+                    'startPlanningYourAdventures'.tr,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.7),
                       height: 1.5,
@@ -296,7 +296,7 @@ class _VisitListScreenState extends State<VisitListScreen> {
                   ElevatedButton.icon(
                     onPressed: () => Get.toNamed('/home'),
                     icon: const Icon(Icons.explore_rounded),
-                    label: const Text('Explore Places'),
+                    label: Text('explorePlaces'.tr),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                       shape: RoundedRectangleBorder(
@@ -348,7 +348,7 @@ class _VisitListScreenState extends State<VisitListScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '${controller.visitListPlaces.length} ${controller.visitListPlaces.length == 1 ? 'Place' : 'Places'}',
+                            '${controller.visitListPlaces.length} ${controller.visitListPlaces.length == 1 ? 'place'.tr : 'places'.tr}',
                             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                               fontWeight: FontWeight.bold,
                               fontSize: 22,
@@ -356,7 +356,7 @@ class _VisitListScreenState extends State<VisitListScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Plan your next adventures',
+                            'planYourNextAdventures'.tr,
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                               fontSize: 18,
@@ -528,7 +528,7 @@ class _VisitListScreenState extends State<VisitListScreen> {
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                isUpcoming ? 'Upcoming' : 'Past',
+                                isUpcoming ? 'upcoming'.tr : 'past'.tr,
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w600,
@@ -665,7 +665,7 @@ class _VisitListScreenState extends State<VisitListScreen> {
                               color: Theme.of(context).primaryColor,
                             ),
                             label: Text(
-                              'View Details',
+                              'viewDetails'.tr,
                               style: TextStyle(
                                 color: Theme.of(context).primaryColor,
                                 fontWeight: FontWeight.w600,
@@ -688,8 +688,8 @@ class _VisitListScreenState extends State<VisitListScreen> {
                               onPressed: () async {
                                 if (!controller.authService.isLoggedIn()) {
                                   Get.snackbar(
-                                    'Login Required',
-                                    'Please login to manage your visit list',
+                                    'loginRequired'.tr,
+                                    'pleaseLoginToManageVisitList'.tr,
                                     snackPosition: SnackPosition.BOTTOM,
                                   );
                                   Get.toNamed('/login');
@@ -701,19 +701,19 @@ class _VisitListScreenState extends State<VisitListScreen> {
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(16),
                                     ),
-                                    title: const Text('Remove from Visit List'),
-                                    content: Text('Remove "${place.name}" from your visit list?'),
+                                    title: Text('removeFromVisitList'.tr),
+                                    content: Text('removeFromVisitListQuestion'.tr.replaceAll('{name}', place.name ?? '')),
                                     actions: [
                                       TextButton(
                                         onPressed: () => Get.back(result: false),
-                                        child: const Text('Cancel'),
+                                        child: Text('cancel'.tr),
                                       ),
                                       TextButton(
                                         onPressed: () => Get.back(result: true),
                                         style: TextButton.styleFrom(
                                           foregroundColor: Colors.red,
                                         ),
-                                        child: const Text('Remove'),
+                                        child: Text('remove'.tr),
                                       ),
                                     ],
                                   ),
@@ -723,8 +723,8 @@ class _VisitListScreenState extends State<VisitListScreen> {
                                     await controller.removeFromVisitListWithDateTime(place);
                                   } catch (e) {
                                     Get.snackbar(
-                                      'Error',
-                                      'Failed to remove from visit list: $e',
+                                      'error'.tr,
+                                      'failedToRemoveFromVisitList'.tr,
                                       snackPosition: SnackPosition.BOTTOM,
                                     );
                                   }

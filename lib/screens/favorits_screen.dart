@@ -33,8 +33,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
-          'Favorites',
+        title: Text(
+          'favorites'.tr,
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 24,
@@ -48,7 +48,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             onPressed: () {
               homeController.fetchFavoritePlaces();
             },
-            tooltip: 'Refresh',
+            tooltip: 'refresh'.tr,
           ),
         ],
       ),
@@ -65,7 +65,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Loading your favorites...',
+                  'loadingYourFavorites'.tr,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.7),
                   ),
@@ -96,7 +96,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'Oops! Something went wrong',
+                    'oopsSomethingWentWrong'.tr,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -114,7 +114,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   ElevatedButton.icon(
                     onPressed: () => homeController.fetchFavoritePlaces(),
                     icon: const Icon(Icons.refresh_rounded),
-                    label: const Text('Try Again'),
+                    label: Text('tryAgain'.tr),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                       shape: RoundedRectangleBorder(
@@ -149,7 +149,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   ),
                   const SizedBox(height: 32),
                   Text(
-                    'No Favorites Yet',
+                    'noFavoritesYet'.tr,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -157,7 +157,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Start exploring and save your favorite places!\nThey\'ll appear here for easy access.',
+                    'startExploringAndSaveYourFavoritePlaces'.tr,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.7),
                       height: 1.5,
@@ -168,7 +168,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   ElevatedButton.icon(
                     onPressed: () => Get.toNamed('/home'),
                     icon: const Icon(Icons.explore_rounded),
-                    label: const Text('Explore Places'),
+                    label: Text('explorePlaces'.tr),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                       shape: RoundedRectangleBorder(
@@ -220,18 +220,18 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '${homeController.favoritePlaces.length} ${homeController.favoritePlaces.length == 1 ? 'Favorite' : 'Favorites'}',
+                            '${homeController.favoritePlaces.length} ${homeController.favoritePlaces.length == 1 ? 'favorite'.tr : 'favorites'.tr}',
                             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                               fontWeight: FontWeight.bold,
-                              fontSize: 22,
+                              fontSize: 20,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Your saved destinations',
+                            'yourSavedDestinations'.tr,
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
-                              fontSize: 20,
+                              fontSize: 18,
                               fontFamily: 'Caveat',
                             ),
                           ),
@@ -393,8 +393,8 @@ class DestinationCard extends StatelessWidget {
                                 color: Colors.white,
                               ),
                               const SizedBox(width: 6),
-                              const Text(
-                                'Saved',
+                              Text(
+                                'saved'.tr,
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w600,
@@ -468,7 +468,7 @@ class DestinationCard extends StatelessWidget {
                             ),
                           ),
                           child: Text(
-                            place.category!,
+                            place.type!,
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Theme.of(context).primaryColor,
                               fontWeight: FontWeight.w600,
@@ -490,7 +490,7 @@ class DestinationCard extends StatelessWidget {
                               color: Theme.of(context).primaryColor,
                             ),
                             label: Text(
-                              'View Details',
+                              'viewDetails'.tr,
                               style: TextStyle(
                                 color: Theme.of(context).primaryColor,
                                 fontWeight: FontWeight.w600,
@@ -516,19 +516,19 @@ class DestinationCard extends StatelessWidget {
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(16),
                                     ),
-                                    title: const Text('Remove from Favorites'),
-                                    content: Text('Remove "${place.name}" from your favorites?'),
+                                    title: Text('removeFromFavorites'.tr),
+                                    content: Text('removeFromFavoritesQuestion'.tr.replaceAll('{name}', place.name ?? '')),
                                     actions: [
                                       TextButton(
                                         onPressed: () => Get.back(result: false),
-                                        child: const Text('Cancel'),
+                                        child: Text('cancel'.tr),
                                       ),
                                       TextButton(
                                         onPressed: () => Get.back(result: true),
                                         style: TextButton.styleFrom(
                                           foregroundColor: Colors.red,
                                         ),
-                                        child: const Text('Remove'),
+                                        child: Text('remove'.tr),
                                       ),
                                     ],
                                   ),
@@ -542,7 +542,7 @@ class DestinationCard extends StatelessWidget {
                                 size: 20,
                                 color: Colors.red.shade400,
                               ),
-                              tooltip: 'Remove',
+                              tooltip: 'remove'.tr,
                             ),
                           ),
                         ],

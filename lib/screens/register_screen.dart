@@ -51,7 +51,7 @@ class RegisterScreen extends GetView<AuthController> {
                     children: [
                       const SizedBox(height: 30),
                       Text(
-                        'Create Your Account',
+                        'createYourAccount'.tr,
                         style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           fontFamily: 'Caveat',
                           fontSize: 32,
@@ -60,7 +60,7 @@ class RegisterScreen extends GetView<AuthController> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Join us and start exploring!',
+                        'joinUsAndStartExploring'.tr,
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           fontSize: 16,
                         ),
@@ -90,8 +90,8 @@ class RegisterScreen extends GetView<AuthController> {
                             // Name field
                             TextField(
                               controller: controller.nameController,
-                              decoration: const InputDecoration(
-                                labelText: 'Full Name',
+                              decoration: InputDecoration(
+                                labelText: 'fullName'.tr,
                                 prefixIcon: Icon(Icons.person_outline),
                               ),
                             ),
@@ -101,8 +101,8 @@ class RegisterScreen extends GetView<AuthController> {
                             TextField(
                               controller: controller.emailController,
                               keyboardType: TextInputType.emailAddress,
-                              decoration: const InputDecoration(
-                                labelText: 'Email',
+                              decoration: InputDecoration(
+                                labelText: 'email'.tr,
                                 prefixIcon: Icon(Icons.email_outlined),
                               ),
                             ),
@@ -113,7 +113,7 @@ class RegisterScreen extends GetView<AuthController> {
                               controller: controller.passwordController,
                               obscureText: !controller.isPasswordVisible.value,
                               decoration: InputDecoration(
-                                labelText: 'Password',
+                                labelText: 'password'.tr,
                                 prefixIcon: const Icon(Icons.lock_outline),
                                 suffixIcon: IconButton(
                                   onPressed: controller.togglePasswordVisibility,
@@ -141,8 +141,8 @@ class RegisterScreen extends GetView<AuthController> {
                                   width: 24,
                                   child: CircularProgressIndicator(strokeWidth: 2),
                                 )
-                                    : const Text(
-                                  'Sign Up',
+                                    : Text(
+                                  'signUp'.tr,
                                   style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
@@ -160,12 +160,12 @@ class RegisterScreen extends GetView<AuthController> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            "Already have an account? ",
+                            'alreadyHaveAnAccount'.tr,
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
                           TextButton(
                             onPressed: () => Get.off(() => const LoginScreen()),
-                            child: const Text('Login'),
+                            child: Text('login'.tr),
                           ),
                         ],
                       ),

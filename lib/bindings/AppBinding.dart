@@ -3,6 +3,7 @@ import 'package:tour_guide/controllers/connection_controller.dart';
 import 'package:tour_guide/services/Authservice.dart';
 import '../controllers/location_controller.dart';
 import '../controllers/theme_controller.dart';
+import '../controllers/language_controller.dart';
 import '../services/user_service.dart';  
 
 class AppBinding extends Bindings {
@@ -20,6 +21,12 @@ class AppBinding extends Bindings {
     // ✅ Put ThemeController as permanent so theme persists across routes
     Get.put<ThemeController>(
       ThemeController(),
+      permanent: true,
+    );
+    
+    // ✅ Put LanguageController as permanent so language persists across routes
+    Get.put<LanguageController>(
+      LanguageController(),
       permanent: true,
     );
     

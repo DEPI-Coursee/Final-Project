@@ -109,10 +109,10 @@ class _PlaceDetailsState extends State<PlaceDetails> {
     if (place == null) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Place Details'),
+          title: Text('placeDetails'.tr),
         leading:IconButton(  
               icon: const Icon(Icons.home),
-              tooltip: 'Home',         
+              tooltip: 'home'.tr,         
            onPressed: () => Get.offAllNamed('/home'),
         
 
@@ -130,7 +130,7 @@ class _PlaceDetailsState extends State<PlaceDetails> {
         title: const Text('Place Details'),
         leading: IconButton(
           icon: const Icon(Icons.home),
-          tooltip: 'Home',
+          tooltip: 'home'.tr,
           onPressed: () => Get.offAllNamed('/home'),
         ),
      ),
@@ -336,8 +336,8 @@ class _PlaceDetailsState extends State<PlaceDetails> {
                             await homeController.addToFavorites(place!);
                           } else {
                             Get.snackbar(
-                              'Login Required',
-                              'Please login to add to favorites',
+                              'loginRequired'.tr,
+                              'pleaseLoginToAddToFavorites'.tr,
                               snackPosition: SnackPosition.BOTTOM,
                             );
                             // Store return route with place as argument
@@ -349,7 +349,7 @@ class _PlaceDetailsState extends State<PlaceDetails> {
                           }
                         },
                         icon: const Icon(Icons.favorite_border),
-                        label: const Text("Add to Favorite"),
+                        label: Text("addToFavorite".tr),
                         style: ElevatedButton.styleFrom(
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -368,8 +368,8 @@ class _PlaceDetailsState extends State<PlaceDetails> {
                           final homeController = Get.find<HomeController>();
                           if (!homeController.authService.isLoggedIn()) {
                             Get.snackbar(
-                              'Login Required',
-                              'Please login to add to visit list',
+                              'loginRequired'.tr,
+                              'pleaseLoginToAddToVisitList'.tr,
                               snackPosition: SnackPosition.BOTTOM,
                             );
                             // Store return route with place as argument
@@ -383,7 +383,7 @@ class _PlaceDetailsState extends State<PlaceDetails> {
                           await _showDateTimePicker(context, place!);
                         },
                         icon: const Icon(Icons.calendar_today),
-                        label: const Text("Add to Visit List"),
+                        label: Text("addToVisitList".tr),
                         style: ElevatedButton.styleFrom(
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -403,7 +403,7 @@ class _PlaceDetailsState extends State<PlaceDetails> {
                           launchUrl(url);
                         },
                         icon: const Icon(Icons.map),
-                        label: const Text("Open Google Map"),
+                        label: Text("openGoogleMap".tr),
                         style: ElevatedButton.styleFrom(
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),

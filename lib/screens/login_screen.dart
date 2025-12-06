@@ -53,7 +53,7 @@ class LoginScreen extends GetView<AuthController> {
                       const SizedBox(height: 30),
                       
                       Text(
-                        'Welcome to Tourio',
+                        'welcomeToTourio'.tr,
                         style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           fontFamily: 'Caveat',
                           fontSize: 32,
@@ -62,7 +62,7 @@ class LoginScreen extends GetView<AuthController> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Sign in to discover amazing places',
+                        'signInToDiscoverAmazingPlaces'.tr,
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           fontSize: 16,
                         ),
@@ -94,7 +94,7 @@ class LoginScreen extends GetView<AuthController> {
                               controller: controller.emailController,
                               keyboardType: TextInputType.emailAddress,
                               decoration: InputDecoration(
-                                labelText: 'Email',
+                                labelText: 'email'.tr,
                                 prefixIcon: const Icon(Icons.email_outlined),
                               ),
                             ),
@@ -105,7 +105,7 @@ class LoginScreen extends GetView<AuthController> {
                               controller: controller.passwordController,
                               obscureText: !controller.isPasswordVisible.value,
                               decoration: InputDecoration(
-                                labelText: 'Password',
+                                labelText: 'password'.tr,
                                 prefixIcon: const Icon(Icons.lock_outline),
                                 suffixIcon: IconButton(
                                   onPressed: controller.togglePasswordVisibility,
@@ -135,8 +135,8 @@ class LoginScreen extends GetView<AuthController> {
                                           strokeWidth: 2,
                                         ),
                                       )
-                                    : const Text(
-                                        'Sign In',
+                                    : Text(
+                                        'signIn'.tr,
                                         style: TextStyle(
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold,
@@ -155,7 +155,7 @@ class LoginScreen extends GetView<AuthController> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            "Don't have an account? ",
+                            'dontHaveAnAccount'.tr,
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
                           TextButton(
@@ -164,7 +164,7 @@ class LoginScreen extends GetView<AuthController> {
                               final currentArgs = Get.arguments;
                               Get.toNamed('/register', arguments: currentArgs);
                             }, 
-                            child: const Text('Sign up'),
+                            child: Text('signUp'.tr),
                           ),
                         ],
                       ),

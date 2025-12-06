@@ -7,6 +7,7 @@ import 'package:tour_guide/screens/favorits_screen.dart';
 import 'package:tour_guide/screens/visit_list_screen.dart';
 import '../controllers/home_controller.dart';
 import '../controllers/theme_controller.dart';
+import '../controllers/language_controller.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 
@@ -17,6 +18,8 @@ class HomeScreen extends StatelessWidget {
   final HomeController controller = Get.find<HomeController>();
   // ✅ Get ThemeController for theme switching
   final ThemeController themeController = Get.find<ThemeController>();
+  // ✅ Get LanguageController for language switching
+  final LanguageController languageController = Get.find<LanguageController>();
 
   // Helper function to get asset path for each category
   static String _getCategoryAssetPath(String category) {
@@ -56,7 +59,7 @@ class HomeScreen extends StatelessWidget {
             icon: Icon(
               themeController.isDarkMode ? Icons.light_mode : Icons.dark_mode,
             ),
-            tooltip: themeController.isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+            tooltip: themeController.isDarkMode ? 'switchToLightMode'.tr : 'switchToDarkMode'.tr,
             onPressed: () {
               themeController.toggleTheme();
             },
@@ -65,7 +68,7 @@ class HomeScreen extends StatelessWidget {
           Builder(
             builder: (context) => IconButton(
               icon: const Icon(Icons.menu),
-              tooltip: 'Open menu',
+              tooltip: 'openMenu'.tr,
               onPressed: () => Scaffold.of(context).openEndDrawer(),
             ),
           ),
@@ -78,7 +81,7 @@ class HomeScreen extends StatelessWidget {
             DrawerHeader(
               decoration: BoxDecoration(color: Theme.of(context).primaryColor),
               child: Text(
-                'Menu',
+                'menu'.tr,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   color: Colors.white,
                   fontSize: 24,
@@ -87,14 +90,14 @@ class HomeScreen extends StatelessWidget {
             ),
             ListTile(
               leading: const Icon(Icons.favorite),
-              title: const Text('Favorites'),
+              title: Text('favorites'.tr),
               onTap: () {
                 if (controller.authService.isLoggedIn()) {
                   Get.to(FavoritesScreen());
                 } else {
                   Get.snackbar(
-                    'Login Required',
-                    'Please login to view your favorites',
+                    'loginRequired'.tr,
+                    'pleaseLoginToViewYourFavorites'.tr,
                     snackPosition: SnackPosition.BOTTOM,
                   );
                   Get.toNamed('/login');
@@ -103,14 +106,14 @@ class HomeScreen extends StatelessWidget {
             ),
             ListTile(
               leading: const Icon(Icons.list_alt),
-              title: const Text('Visit List'),
+              title: Text('visitList'.tr),
               onTap: () {
                 if (controller.authService.isLoggedIn()) {
                   Get.to(VisitListScreen());
                 } else {
                   Get.snackbar(
-                    'Login Required',
-                    'Please login to view your visit list',
+                    'loginRequired'.tr,
+                    'pleaseLoginToViewYourVisitList'.tr,
                     snackPosition: SnackPosition.BOTTOM,
                   );
                   Get.toNamed('/login');
@@ -147,6 +150,58 @@ class HomeScreen extends StatelessWidget {
             //     }
             //   },
             // ),
+            Obx(() => ListTile(
+              leading: const Icon(Icons.language),
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  // Text(
+                  //   'Language',
+                  //   style: Theme.of(context).textTheme.bodyLarge,
+                  // ),
+                  const SizedBox(width: 8),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'EN',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: languageController.isEnglish 
+                              ? Theme.of(context).primaryColor 
+                              : Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                          fontWeight: languageController.isEnglish 
+                              ? FontWeight.bold 
+                              : FontWeight.normal,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Switch(
+                        value: languageController.isArabic,
+                        onChanged: (value) {
+                          languageController.toggleLanguage();
+                        },
+                        activeColor: Theme.of(context).primaryColor,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'AR',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: languageController.isArabic 
+                              ? Theme.of(context).primaryColor 
+                              : Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                          fontWeight: languageController.isArabic 
+                              ? FontWeight.bold 
+                              : FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              onTap: () {
+                languageController.toggleLanguage();
+              },
+            )),
             StreamBuilder<User?>(
               stream:FirebaseAuth.instance.authStateChanges() ,
             builder: (context, snapshot) {
@@ -156,7 +211,7 @@ class HomeScreen extends StatelessWidget {
                   loggedIn ? Icons.logout : Icons.login,
                   color: Colors.grey,
                 ),
-                title: Text(loggedIn ? 'Logout' : 'Login'),
+                title: Text(loggedIn ? 'logout'.tr : 'login'.tr),
                 onTap: () async {
                   if (loggedIn) {
                     final success = await controller.authService.signOut();
@@ -164,7 +219,7 @@ class HomeScreen extends StatelessWidget {
                       Get.offNamed('/login');
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Logout failed. Try again.')),
+                        SnackBar(content: Text('logoutFailed'.tr)),
                       );
                     }
                   } else {
@@ -187,7 +242,7 @@ class HomeScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Let\'s find the perfect place for you',
+                    'letsfindetheperfectplaceforyou'.tr,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontSize: 18,
                       fontFamily: 'Caveat',
@@ -197,7 +252,7 @@ class HomeScreen extends StatelessWidget {
                   TextField(
                     controller: controller.searchController,
                     decoration: InputDecoration(
-                      hintText: 'Search: museum, restaurant, park...',
+                      hintText: 'searchHint'.tr,
                       prefixIcon: Icon(
                         Icons.search,
                         color: Theme.of(context).primaryColor,
@@ -209,7 +264,7 @@ class HomeScreen extends StatelessWidget {
                                 Icons.clear,
                                 color: Theme.of(context).primaryColor,
                               ),
-                              tooltip: 'Clear search',
+                              tooltip: 'clearSearch'.tr,
                             )
                           : const SizedBox.shrink(),
                       ),
@@ -269,7 +324,7 @@ class HomeScreen extends StatelessWidget {
                                     if (categories[index] != 'All')
                                       const SizedBox(width: 6),
                                     Text(
-                                      categories[index],
+                                      categories[index] == 'All' ? 'all'.tr : categories[index].tr,
                                       style: TextStyle(
                                         fontWeight: FontWeight.w500,
                                         color: selectedIndex == index
@@ -305,7 +360,7 @@ class HomeScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Error loading places',
+                          'errorLoadingPlaces'.tr,
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 8),
@@ -317,7 +372,7 @@ class HomeScreen extends StatelessWidget {
                         const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: controller.getlocation,
-                          child: const Text('Retry'),
+                          child: Text('retry'.tr),
                         ),
                       ],
                     ),
@@ -337,13 +392,13 @@ class HomeScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'No places found',
+                          'noPlacesFound'.tr,
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 8),
                         ElevatedButton(
                           onPressed: controller.getlocation,
-                          child: const Text('Load Places'),
+                          child: Text('loadPlaces'.tr),
                         ),
                       ],
                     ),
@@ -433,7 +488,7 @@ class HomeScreen extends StatelessWidget {
                                     children: [
                                       // NAME
                                       Text(
-                                        place.name ?? 'Unknown Place',
+                                        place.name ?? 'unknownPlace'.tr,
                                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold,
@@ -447,7 +502,7 @@ class HomeScreen extends StatelessWidget {
                                       Text(
                                         place.description ??
                                             place.addressLine2 ??
-                                            'No description available.',
+                                            'noDescriptionAvailable'.tr,
                                         style: Theme.of(context).textTheme.bodyMedium,
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
@@ -461,7 +516,7 @@ class HomeScreen extends StatelessWidget {
                                               size: 14, color: Theme.of(context).primaryColor),
                                           const SizedBox(width: 4),
                                           Text(
-                                            place.country ?? 'Egypt',
+                                            place.country ?? 'egypt'.tr,
                                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                               color: Theme.of(context).primaryColor,
                                             ),
@@ -472,7 +527,7 @@ class HomeScreen extends StatelessWidget {
                                           const SizedBox(width: 4),
                                           Expanded(
                                             child: Text(
-                                               place.type ?? 'Place',
+                                               place.type?.tr ?? 'place'.tr,
                                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                                 color: Theme.of(context).primaryColor,
                                               ),

@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:tour_guide/bindings/AppBinding.dart';
 import 'package:tour_guide/controllers/connection_controller.dart';
 import 'package:tour_guide/controllers/theme_controller.dart';
+import 'package:tour_guide/controllers/language_controller.dart';
 import 'package:tour_guide/internet_middleware.dart';
 import 'package:tour_guide/screens/getStrated_screen.dart';
 import 'package:tour_guide/screens/home_screen.dart';
@@ -18,6 +19,7 @@ import 'package:tour_guide/screens/visit_list_screen.dart';
 import 'package:tour_guide/firebaseoptions.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:tour_guide/controllers/auth_controller.dart';
+import 'package:tour_guide/services/app_translations.dart';
 import 'package:tour_guide/services/notification_service.dart';
 import 'package:tour_guide/services/work_manager_service.dart';
 
@@ -78,8 +80,11 @@ class MyApp extends StatelessWidget {
     
     return Obx(() {
       final ThemeController themeController = Get.find<ThemeController>();
+      final LanguageController languageController = Get.find<LanguageController>();
       return GetMaterialApp(
         debugShowCheckedModeBanner: false,
+        locale: languageController.currentLocale.value,
+        translations: AppTranslations(),//hyakhod el translations mn elclass elly 3mlnah
         title: 'Tour Guide App',
         initialRoute: '/splash',
         initialBinding: AppBinding(),

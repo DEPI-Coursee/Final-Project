@@ -88,8 +88,8 @@ class OfflinePlacesScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
-          "Offline Places",
+        title: Text(
+          "Offline Places".tr,
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -219,7 +219,7 @@ class OfflinePlacesScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                "You're offline — showing saved places",
+                "You're offline — showing saved places".tr,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
@@ -239,13 +239,13 @@ class OfflinePlacesScreen extends StatelessWidget {
                     Get.offAllNamed('/home');
                   } else {
                     Get.snackbar(
-                      'Still offline',
-                      'Check your internet connection and try again.',
+                      'stillOffline'.tr,
+                      'checkInternetConnection'.tr,
                       snackPosition: SnackPosition.BOTTOM,
                     );
                   }
                 },
-                child: const Text('Retry online'),
+                child: Text('retryOnline'.tr),
               ),
             ),
           ],

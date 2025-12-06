@@ -36,16 +36,16 @@ class AuthController extends GetxController {
     final String password = passwordController.text;
 
     if (email.isEmpty) {
-      Get.snackbar('Missing email', 'Please enter your email', snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar('missingEmail'.tr, 'pleaseEnterYourEmail'.tr, snackPosition: SnackPosition.BOTTOM);
       return;
     }
     final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
     if (!emailRegex.hasMatch(email)) {
-      Get.snackbar('Invalid email', 'Enter a valid email address', snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar('invalidEmail'.tr, 'enterValidEmailAddress'.tr, snackPosition: SnackPosition.BOTTOM);
       return;
     }
     if (password.isEmpty || password.length < 6) {
-      Get.snackbar('Invalid password', 'Password must be at least 6 characters', snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar('invalidPassword'.tr, 'passwordMustBeAtLeast6'.tr, snackPosition: SnackPosition.BOTTOM);
       return;
     }
 
@@ -85,7 +85,7 @@ class AuthController extends GetxController {
         Get.offAllNamed('/home');
       }
     } else {
-      Get.snackbar('error signing in', 'enter a valid email and password', snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar('errorSigningIn'.tr, 'enterValidEmailAndPassword'.tr, snackPosition: SnackPosition.BOTTOM);
     }
   }
 
@@ -95,15 +95,15 @@ class AuthController extends GetxController {
     final password = passwordController.text;
 
     if (name.isEmpty) {
-      Get.snackbar('Missing name', 'Please enter your full name', snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar('missingName'.tr, 'pleaseEnterYourFullName'.tr, snackPosition: SnackPosition.BOTTOM);
       return;
     }
     if (email.isEmpty || !email.contains('@')) {
-      Get.snackbar('Invalid email', 'Please enter a valid email', snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar('invalidEmail'.tr, 'enterValidEmailAddress'.tr, snackPosition: SnackPosition.BOTTOM);
       return;
     }
     if (password.length < 6) {
-      Get.snackbar('Weak password', 'Password must be at least 6 characters', snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar('weakPassword'.tr, 'passwordMustBeAtLeast6'.tr, snackPosition: SnackPosition.BOTTOM);
       return;
     }
 
@@ -142,32 +142,32 @@ class AuthController extends GetxController {
           // No return route, go to home
           Get.offAllNamed('/home');
         }
-      } else {
-        Get.snackbar('Registration failed', 'Something went wrong. Please try again.', snackPosition: SnackPosition.BOTTOM);
+        } else {
+        Get.snackbar('registrationFailed'.tr, 'somethingWentWrongTryAgain'.tr, snackPosition: SnackPosition.BOTTOM);
       }
     } on FirebaseAuthException catch (e) {
       isSubmitting.value = false;
-      String errorMessage = 'Registration failed';
+      String errorMessage = 'somethingWentWrongTryAgain'.tr;
       switch (e.code) {
         case 'weak-password':
-          errorMessage = 'Password is too weak';
+          errorMessage = 'passwordTooWeak'.tr;
           break;
         case 'email-already-in-use':
-          errorMessage = 'Email is already registered';
+          errorMessage = 'emailAlreadyRegistered'.tr;
           break;
         case 'invalid-email':
-          errorMessage = 'Invalid email address';
+          errorMessage = 'invalidEmailAddress'.tr;
           break;
         case 'operation-not-allowed':
-          errorMessage = 'Registration is not allowed';
+          errorMessage = 'registrationNotAllowed'.tr;
           break;
         default:
-          errorMessage = e.message ?? 'Something went wrong';
+          errorMessage = e.message ?? 'somethingWentWrongTryAgain'.tr;
       }
-      Get.snackbar('Registration failed', errorMessage, snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar('registrationFailed'.tr, errorMessage, snackPosition: SnackPosition.BOTTOM);
     } catch (e) {
       isSubmitting.value = false;
-      Get.snackbar('Registration failed', 'Error: ${e.toString()}', snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar('registrationFailed'.tr, '${'error'.tr}: ${e.toString()}', snackPosition: SnackPosition.BOTTOM);
     }
   }
 

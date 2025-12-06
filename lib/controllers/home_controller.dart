@@ -455,8 +455,8 @@ class HomeController extends GetxController {
       } else {
         errorMessage.value = 'Failed to load places: $e';
         Get.snackbar(
-          'Error',
-          'Failed to load places. Please try again later.',
+          'error'.tr,
+          'failedToLoadPlaces'.tr,
           snackPosition: SnackPosition.BOTTOM,
         );
       }
@@ -767,7 +767,7 @@ class HomeController extends GetxController {
       final uid = authService.getCurrentUserId();
       if (uid == null) {
         print('❌ User not logged in');
-        Get.snackbar('Login Required', 'Please login to add favorites');
+        Get.snackbar('loginRequired'.tr, 'pleaseLoginToAddFavorites'.tr);
         Get.toNamed('/login');
         return;
       }
@@ -812,15 +812,15 @@ class HomeController extends GetxController {
       }
 
       Get.snackbar(
-        'Success',
-        'Added "${place.name}" to favorites',
+        'success'.tr,
+        'addedToFavorites'.tr.replaceAll('{name}', place.name ?? ''),
         snackPosition: SnackPosition.BOTTOM,
       );
     } catch (e) {
       print('❌ Error adding to favorites: $e');
       Get.snackbar(
-        'Error',
-        'Failed to add to favorites: $e',
+        'error'.tr,
+        'failedToAddToFavorites'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
     }
@@ -841,15 +841,15 @@ class HomeController extends GetxController {
       print('✅ Removed from favorites');
 
       Get.snackbar(
-        'Removed',
-        'Place removed from favorites',
+        'removed'.tr,
+        'placeRemovedFromFavorites'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
     } catch (e) {
       print('❌ Error removing from favorites: $e');
       Get.snackbar(
-        'Error',
-        'Failed to remove from favorites: $e',
+        'error'.tr,
+        'failedToRemoveFromFavorites'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
     }
@@ -1025,7 +1025,7 @@ class HomeController extends GetxController {
       final uid = authService.getCurrentUserId();
       if (uid == null) {
         print('❌ User not logged in');
-        Get.snackbar('Login Required', 'Please login to add to visit list');
+        Get.snackbar('loginRequired'.tr, 'pleaseLoginToAddToVisitList'.tr);
         Get.toNamed('/login');
         return;
       }
@@ -1078,17 +1078,32 @@ class HomeController extends GetxController {
         visitListItemsWithDates[placeId] = visitDateTime;
       }
 
+      // Calculate notification timing message
+      final now = DateTime.now();
+      final timeUntilVisit = visitDateTime.difference(now);
+      String notificationMessage;
+      
+      if (timeUntilVisit.isNegative) {
+        notificationMessage = 'noNotificationScheduled'.tr;
+      } else if (timeUntilVisit.inMinutes > 30) {
+        notificationMessage = 'notificationScheduled30Minutes'.tr;
+      } else if (timeUntilVisit.inMinutes > 5) {
+        notificationMessage = 'notificationScheduled'.tr;
+      } else {
+        notificationMessage = 'notificationWillAppearNow'.tr;
+      }
+
       Get.snackbar(
-        'Success',
-        'Added "${place.name}" to visit list\nNotification scheduled for 30 minutes before visit',
+        'success'.tr,
+        '${'addedToVisitList'.tr.replaceAll('{name}', place.name ?? '')}\n$notificationMessage',
         snackPosition: SnackPosition.BOTTOM,
         duration: const Duration(seconds: 3),
       );
     } catch (e) {
       print('❌ Error adding to visit list: $e');
       Get.snackbar(
-        'Error',
-        'Failed to add to visit list: $e',
+        'error'.tr,
+        'failedToAddToVisitList'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
     }
@@ -1217,15 +1232,15 @@ class HomeController extends GetxController {
       print('✅ Removed from visit list');
 
       Get.snackbar(
-        'Removed',
-        'Place removed from visit list',
+        'removed'.tr,
+        'placeRemovedFromVisitList'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
     } catch (e) {
       print('❌ Error removing from visit list: $e');
       Get.snackbar(
-        'Error',
-        'Failed to remove from visit list: $e',
+        'error'.tr,
+        'failedToRemoveFromVisitList'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
     }

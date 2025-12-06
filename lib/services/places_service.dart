@@ -110,6 +110,8 @@ class PlacesService {
         'text': searchText,
         'filter': 'countrycode:eg',
         'bias': 'proximity:$longitude,$latitude',
+        // 'bias': 'proximity:12.496366,41.902782',//it
+        // 'bias': 'proximity:-73.935242,40.730610',//us
         'limit': limit,
         'apiKey': apiKey,
       };
