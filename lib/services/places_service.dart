@@ -25,6 +25,9 @@ class PlacesService {
     'كافيه',
     'سينما',
     'مستشفي',
+    'fast food',
+    'stadium',
+    'shopping'
   ];
 
   final Map<String, String> placeTypeTranslations = {
@@ -39,6 +42,9 @@ class PlacesService {
     'كافيه': 'Cafe',
     'سينما': 'Cinema',
     'مستشفي': 'Hospital',
+    'fast food':'fast food',
+    'stadium':'stadium',
+    'shopping':'shopping'
   };
 
   /// This searches multiple categories and returns combined results
@@ -51,6 +57,12 @@ class PlacesService {
     int limit = 10,
   }) async {
     try {
+      String? countryCode = await _getCountryCode(
+        latitude: latitude,
+        longitude: longitude,
+      );
+      countryCode ??= 'eg';
+      print('🌍 Using country code: $countryCode');
       // 🚀 Execute all searches in parallel instead of sequentially
       final List<Future<List<PlaceModel>>> searchFutures = staticSearchTerms.map((searchTerm) async {
         try {
@@ -62,6 +74,7 @@ class PlacesService {
             longitude: longitude,
             latitude: latitude,
             limit: limit,
+            countryCode: countryCode!,
           );
 
           // إضافة الـ type لكل نتيجة
@@ -89,7 +102,7 @@ class PlacesService {
         }
       }
 
-      print('✅ Found ${uniquePlaces.length} unique places from ${staticSearchTerms.length} categories (loaded in parallel)');
+      print('✅ ✅ ✅ Found ${uniquePlaces.length} unique places from ${staticSearchTerms.length} categories (loaded in parallel)');
       return uniquePlaces.values.toList();
 
     } catch (e) {
@@ -103,12 +116,13 @@ class PlacesService {
     required String searchText,
     required double longitude,
     required double latitude,
+    required String countryCode,
     int limit = 10,
   }) async {
     try {
       final queryParams = {
         'text': searchText,
-        'filter': 'countrycode:eg',
+        'filter': 'countrycode:$countryCode',
         'bias': 'proximity:$longitude,$latitude',
         // 'bias': 'proximity:12.496366,41.902782',//it
         // 'bias': 'proximity:-73.935242,40.730610',//us
@@ -116,7 +130,9 @@ class PlacesService {
         'apiKey': apiKey,
       };
 
-      print('📡 Searching autocomplete: "$searchText" near ($longitude, $latitude)');
+      print(
+          '📡 Searching autocomplete: "$searchText" in $countryCode near ($longitude, $latitude)');
+
 
       final response = await _dio.get(
         '/geocode/autocomplete',
@@ -153,11 +169,52 @@ class PlacesService {
     required double latitude,
     int limit = 10,
   }) async {
+    String? countryCode = await _getCountryCode(
+      latitude: latitude,
+      longitude: longitude,
+    );
+    countryCode ??= 'eg';
     return await _searchAutocomplete(
+
       searchText: searchText,
       longitude: longitude,
       latitude: latitude,
       limit: limit,
+      countryCode: countryCode,
     );
   }
+
+
+
+  Future<String?> _getCountryCode({
+    required double latitude,
+    required double longitude,
+  }) async {
+    try {
+      final response = await _dio.get(
+        '/geocode/reverse',
+        queryParameters: {
+          'lat': latitude,
+          'lon': longitude,
+          'apiKey': apiKey,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final features = response.data['features'] as List? ?? [];
+        if (features.isNotEmpty) {
+          final props = features[0]['properties'] as Map<String, dynamic>;
+          // Geoapify بيرجع country_code جاهز small (مثلاً eg, us, it)
+          final String? code = props['country_code'];
+          print('🌍 Detected country code: $code');
+          return code;
+        }
+      }
+      return null;
+    } catch (e) {
+      print('❌ Error getting country code: $e');
+      return null;
+    }
+  }
+
 }
