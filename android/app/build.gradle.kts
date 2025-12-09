@@ -29,7 +29,7 @@ android {
         // For more information, see: https://flutter.dev/to/review-gradle-config.
 
         // Bump minSdk to 23 to satisfy awesome_notifications plugin requirement
-        minSdk = 23
+        minSdk = flutter.minSdkVersion
 
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
