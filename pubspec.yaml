@@ -91,7 +91,9 @@ flutter:
     - assets/categories_imgs/resturant.png
     - assets/categories_imgs/hospital.jpg
     - assets/categories_imgs/Nature preserve.jpg
-  #   - images/a_dot_ham.jpeg
+    - assets/categories_imgs/shopping.jpg
+    - assets/categories_imgs/staduim.png
+    - assets/categories_imgs/fastFood.jpg
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

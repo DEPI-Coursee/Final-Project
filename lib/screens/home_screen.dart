@@ -35,6 +35,9 @@ class HomeScreen extends StatelessWidget {
       'Cafe': 'assets/categories_imgs/cafe.png',
       'Cinema': 'assets/categories_imgs/cinema.png',
       'Hospital': 'assets/categories_imgs/hospital.jpg',
+      'shopping': 'assets/categories_imgs/shopping.jpg',
+      'stadium':'assets/categories_imgs/staduim.png',
+      'fast food':'assets/categories_imgs/fastFood.jpg',
       // 'Hotel': 'assets/categories_imgs/Hotel-Cairo_four_se.jpg',
     };
     return categoryAssetMap[category] ?? 'assets/categories_imgs/Museum.png';
