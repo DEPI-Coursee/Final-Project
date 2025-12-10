@@ -75,6 +75,9 @@ class HomeController extends GetxController {
     'Cafe',
     'Cinema',
     'Hospital',
+    'fast food',
+    'stadium',
+    'shopping'
     // 'Hotel',
   ];
   final selected = 0.obs;

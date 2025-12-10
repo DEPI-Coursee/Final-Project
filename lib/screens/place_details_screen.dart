@@ -129,9 +129,9 @@ class _PlaceDetailsState extends State<PlaceDetails> {
       appBar: AppBar(
         title: const Text('Place Details'),
         leading: IconButton(
-          icon: const Icon(Icons.home),
-          tooltip: 'home'.tr,
-          onPressed: () => Get.offAllNamed('/home'),
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'back'.tr,
+          onPressed: () => Get.back(),
         ),
      ),
       body: SingleChildScrollView(
@@ -327,37 +327,56 @@ class _PlaceDetailsState extends State<PlaceDetails> {
                     const SizedBox(height: 20),
 
                     // ✅ Add to Favorite Button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: () async {
-                          final homeController = Get.find<HomeController>();
-                          if (homeController.authService.isLoggedIn()) {
-                            await homeController.addToFavorites(place!);
-                          } else {
-                            Get.snackbar(
-                              'loginRequired'.tr,
-                              'pleaseLoginToAddToFavorites'.tr,
-                              snackPosition: SnackPosition.BOTTOM,
-                            );
-                            // Store return route with place as argument
-                            Get.toNamed('/login', arguments: {
-                              'returnRoute': '/place-details',
-                              'place': place!,
-                              'action': 'favorite',
-                            });
-                          }
-                        },
-                        icon: const Icon(Icons.favorite_border),
-                        label: Text("addToFavorite".tr),
-                        style: ElevatedButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                        ),
-                      ),
-                    ),
+                    
+                  // Replace your favorite button with this code:
+
+// ✅ Add to Favorite Button (with toggle)
+GetX<HomeController>(
+  builder: (homeController) {
+    final isFav = homeController.isFavorite(place!);
+    
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: () async {
+          if (!homeController.authService.isLoggedIn()) {
+            Get.snackbar(
+              'loginRequired'.tr,
+              'pleaseLoginToAddToFavorites'.tr,
+              snackPosition: SnackPosition.BOTTOM,
+            );
+            // Store return route with place as argument
+            Get.toNamed('/login', arguments: {
+              'returnRoute': '/place-details',
+              'place': place!,
+              'action': 'favorite',
+            });
+            return;
+          }
+
+          if (isFav) {
+            await homeController.removeFromFavorites(place!);
+          } else {
+            await homeController.addToFavorites(place!);
+          }
+        },
+        icon: Icon(
+          isFav ? Icons.favorite : Icons.favorite_border,
+          color: isFav ? Colors.red : null,
+        ),
+        label: Text(
+          isFav ? "removeFromFavorite".tr : "addToFavorite".tr,
+        ),
+        style: ElevatedButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 14),
+        ),
+      ),
+    );
+  },
+),
                     const SizedBox(height: 10),
                     
                     // ✅ Add to Visit List Button
