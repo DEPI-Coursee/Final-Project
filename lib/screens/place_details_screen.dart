@@ -129,9 +129,9 @@ class _PlaceDetailsState extends State<PlaceDetails> {
       appBar: AppBar(
         title: const Text('Place Details'),
         leading: IconButton(
-          icon: const Icon(Icons.home),
-          tooltip: 'home'.tr,
-          onPressed: () => Get.offAllNamed('/home'),
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'back'.tr,
+          onPressed: () => Get.back(),
         ),
      ),
       body: SingleChildScrollView(
