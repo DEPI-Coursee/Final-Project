@@ -7,7 +7,7 @@
     <!-- Required for precise scheduled notifications on Android 12+ -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <application
-        android:label="tour_guide"
+        android:label="Tour Guide"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true"

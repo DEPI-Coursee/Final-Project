@@ -5,7 +5,8 @@ import 'package:get/get_core/src/get_main.dart';
 
 class NotificationService {
   Future<void> initialize() async {
-    await AwesomeNotifications().initialize(null, [ //null = no default icon
+    await AwesomeNotifications().initialize( 
+    'resource://assets/logo5.png', [ // Custom notification icon
       //momken a3ml aktar mn channel kol chanel le no3 mo3yan mn el notification
       NotificationChannel(
           channelKey: 'visitList',

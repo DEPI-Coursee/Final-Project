@@ -564,27 +564,41 @@ class HomeController extends GetxController {
       final String? imageUrl = results[0];
       // final String? description = results[1];
 
-      final index = places.indexWhere((p) => p.placeId == place.placeId);
-      if (index != -1) {
-        var updatedPlace;
-        if (imageUrl != null && imageUrl.isNotEmpty) {
-          updatedPlace = places[index].copyWith(
-            imageUrl: imageUrl,
-            // description: description,
-          );
-          places[index] = updatedPlace;
-          print('✅ Updated ${place.name} with image');
-        }else{
-          updatedPlace = putCategoryImage(places[index]);
-          places[index] = updatedPlace;
-          print('✅ Updated ${place.name} with category image');
-        }
-        final visibleIndex = visiblePlaces.indexWhere( ///////
-          (p) => p.placeId == place.placeId,
+      // ✅ Always update allPlaces first (source of truth)
+      final allPlacesIndex = allPlaces.indexWhere((p) => p.placeId == place.placeId);
+      if (allPlacesIndex == -1) {
+        print('⚠️ Place not found in allPlaces: ${place.name}');
+        return;
+      }
+
+      var updatedPlace;
+      if (imageUrl != null && imageUrl.isNotEmpty) {
+        updatedPlace = allPlaces[allPlacesIndex].copyWith(
+          imageUrl: imageUrl,
+          // description: description,
         );
-        if (visibleIndex != -1) {
-          visiblePlaces[visibleIndex] = updatedPlace;
-        }
+        allPlaces[allPlacesIndex] = updatedPlace;
+        print('✅ Updated ${place.name} with image in allPlaces');
+      } else {
+        updatedPlace = putCategoryImage(allPlaces[allPlacesIndex]);
+        allPlaces[allPlacesIndex] = updatedPlace;
+        print('✅ Updated ${place.name} with category image in allPlaces');
+      }
+
+      // ✅ Update places if the place is in the current filtered list
+      final placesIndex = places.indexWhere((p) => p.placeId == place.placeId);
+      if (placesIndex != -1) {
+        places[placesIndex] = updatedPlace;
+        print('✅ Updated ${place.name} in places list');
+      }
+
+      // ✅ Update visiblePlaces if the place is currently visible
+      final visibleIndex = visiblePlaces.indexWhere(
+        (p) => p.placeId == place.placeId,
+      );
+      if (visibleIndex != -1) {
+        visiblePlaces[visibleIndex] = updatedPlace;
+        print('✅ Updated ${place.name} in visiblePlaces');
       }
     } catch (e) {
       print('❌ Error fetching image for ${place.name}: $e');
